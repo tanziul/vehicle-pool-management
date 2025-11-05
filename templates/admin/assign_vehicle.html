@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Assign Vehicle{% endblock %}
+
+{% block content %}
+<h2>Assign Vehicle to Booking</h2>
+<p><strong>Employee:</strong> {{ booking.employee.get_full_name }}</p>
+<p><strong>Destination:</strong> {{ booking.destination }}</p>
+<p><strong>Time:</strong> {{ booking.start_time|date:"d M Y, h:i A" }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Assign & Approve</button>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">Back</a>
+</form>
+{% endblock %}
