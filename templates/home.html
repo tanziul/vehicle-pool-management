@@ -1,16 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Home - VPMS{% endblock %}
-
+{% block title %}Home{% endblock %}
 {% block content %}
 <div class="text-center mt-5 py-5">
     <h1 class="display-4 text-primary fw-bold">Vehicle Pool Management System</h1>
-    <p class="lead text-muted">Efficiently manage vehicle bookings, drivers, and trips.</p>
-    <hr class="w-50 mx-auto my-4">
-    {% if user.is_authenticated %}
-        <a href="{% url 'employee_dashboard' %}" class="btn btn-primary btn-lg px-5">Go to Dashboard</a>
-    {% else %}
-        <a href="{% url 'login' %}" class="btn btn-primary btn-lg me-3">Login</a>
-        <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">Register</a>
-    {% endif %}
+    <p class="lead">Efficiently manage vehicle bookings and trips.</p>
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Login</a>
 </div>
 {% endblock %}

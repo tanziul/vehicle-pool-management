@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Manage Vehicles{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">{% include "admin/sidebar.html" %}</div>
+    <div class="col-md-9">
+        <h3>Manage Vehicles</h3>
+
+        <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
+            <i class="fas fa-plus"></i> Add Vehicle
+        </button>
+
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>License Plate</th>
+                        <th>Model</th>
+                        <th>Capacity</th>
+                        <th>Status</th>
+                        <th>Driver</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vehicles %}
+                    <tr>
+                        <td>{{ v.vehicle_number }}</td>
+                        <td>{{ v.model }}</td>
+                        <td>{{ v.capacity }}</td>
+                        <td><span class="badge bg-{% if v.status == 'Available' %}success{% else %}secondary{% endif %}">{{ v.status }}</span></td>
+                        <td>{{ v.driver.get_full_name|default:"—" }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editVehicle{{ v.id }}">Edit</button>
+                            <form method="post" action="{% url 'delete_vehicle' v.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Vehicle Modal -->
+<div class="modal fade" id="addVehicleModal">
+    <div class="modal-dialog">
+        <form method="post" action="{% url 'admin_vehicles' %}">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5>Add Vehicle</h5>
+                </div>
+                <div class="modal-body">
+                    {{ form.as_p }}
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Add</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

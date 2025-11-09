@@ -1,0 +1,43 @@
+@'
+{% extends "base.html" %}
+{% block title %}My Reports{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">{% include "user/sidebar.html" %}</div>
+    <div class="col-md-9">
+        <h3>Trip Reports</h3>
+        <p class="text-muted">Review your past completed trips.</p>
+        
+        {% if reports %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Date</th>
+                        <th>Distance</th>
+                        <th>Fuel</th>
+                        <th>Destination</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reports %}
+                    <tr>
+                        <td>{{ r.booking.vehicle }}</td>
+                        <td>{{ r.completed_at|date:"d M Y" }}</td>
+                        <td>{{ r.distance }} KM</td>
+                        <td>{{ r.fuel_used }} L</td>
+                        <td>{{ r.booking.destination }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">No trip reports yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+'@ > templates\user\reports.html

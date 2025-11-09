@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}All Booking Requests{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        {% include "admin/sidebar.html" %}
+    </div>
+    <div class="col-md-9">
+        <h3 class="mb-3">All Booking Requests</h3>
+        <p class="text-muted mb-4">Approve, reject, and manage all vehicle bookings.</p>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Vehicle</th>
+                        <th>Destination</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bookings %}
+                    <tr>
+                        <td>
+                            <strong>{{ b.employee.get_full_name }}</strong><br>
+                            <small class="text-muted">{{ b.employee.role }}</small>
+                        </td>
+                        <td>{{ b.vehicle|default:"<em>Unknown Vehicle</em>"|safe }}</td>
+                        <td>{{ b.destination }}</td>
+                        <td>{{ b.start_time|date:"M j, Y, P" }}</td>
+                        <td>{{ b.end_time|date:"M j, Y, P" }}</td>
+                        <td>
+                            <span class="badge rounded-pill px-3 py-2
+                                {% if b.priority == 'High' %}bg-danger text-white
+                                {% elif b.priority == 'Medium' %}bg-warning text-dark
+                                {% else %}bg-secondary text-white{% endif %}">
+                                {% if b.priority == 'High' %}7{% elif b.priority == 'Medium' %}5{% else %}3{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill px-3 py-2
+                                {% if b.status == 'Approved' %}bg-success
+                                {% elif b.status == 'Pending' %}bg-warning text-dark
+                                {% elif b.status == 'Completed' %}bg-info
+                                {% else %}bg-dark{% endif %}">
+                                {{ b.status }}
+                                {% if b.status == 'Pending' %} ...{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if b.status == 'Pending' %}
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#approveModal{{ b.id }}">
+                                    Approve
+                                </button>
+                                <form method="post" action="{% url 'reject_booking' b.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+
+                    <!-- APPROVE MODAL -->
+                    <div class="modal fade" id="approveModal{{ b.id }}" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <form method="post" action="{% url 'approve_booking' b.id %}">
+                                {% csrf_token %}
+                                <div class="modal-content">
+                                    <div class="modal-header bg-success text-white">
+                                        <h5 class="modal-title">Assign Vehicle & Approve</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p><strong>Employee:</strong> {{ b.employee.get_full_name }} ({{ b.employee.role }})</p>
+                                        <p><strong>Destination:</strong> {{ b.destination }}</p>
+                                        <p><strong>Time:</strong> {{ b.start_time|date:"d M Y, h:i A" }} – {{ b.end_time|date:"h:i A" }}</p>
+                                        <hr>
+                                        <label class="form-label"><strong>Select Vehicle</strong></label>
+                                        <select name="vehicle" class="form-select" required>
+                                            <option value="">-- Choose Available Vehicle --</option>
+                                            {% for v in vehicles %}
+                                            {% if v.status == 'Available' %}
+                                            <option value="{{ v.id }}">{{ v.model }} ({{ v.vehicle_number }}) - {{ v.driver.get_full_name|default:"No Driver" }}</option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="submit" class="btn btn-success">Assign & Approve</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,6 +7,9 @@ SECRET_KEY = 'django-insecure-change-in-production'
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
+# CUSTOM USER MODEL
+AUTH_USER_MODEL = 'pool_app.User'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,9 +58,6 @@ DATABASES = {
         'PASSWORD': '',
         'HOST': '127.0.0.1',
         'PORT': '3306',
-        'OPTIONS': {
-            'sql_mode': 'TRADITIONAL',
-        },
     }
 }
 
@@ -83,5 +83,5 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
