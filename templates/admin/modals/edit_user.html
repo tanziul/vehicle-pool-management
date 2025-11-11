@@ -1,4 +1,4 @@
-<div class="modal fade" id="editUser{{ user.id }}">
+﻿<div class="modal fade" id="editUser{{ user.id }}">
     <div class="modal-dialog">
         <form method="post" action="{% url 'edit_user' user.id %}">
             {% csrf_token %}

@@ -1,17 +1,49 @@
-{% extends "base.html" %}
-{% block title %}Admin Panel{% endblock %}
+﻿{% extends "admin/base.html" %}
+{% block page_title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-3">{% include "admin/sidebar.html" %}</div>
-    <div class="col-md-9">
-        <h3>Welcome, Admin User!</h3>
-        <p class="text-muted">Here is the overview of your fleet.</p>
-        <div class="row g-3">
-            <div class="col-md-3"><div class="card text-center bg-primary text-white"><div class="card-body"><h5>{{ available_vehicles }} / {{ total_vehicles }}</h5><small>Vehicles</small></div></div></div>
-            <div class="col-md-3"><div class="card text-center bg-success text-white"><div class="card-body"><h5>{{ available_drivers }} / {{ total_drivers }}</h5><small>Drivers</small></div></div></div>
-            <div class="col-md-3"><div class="card text-center bg-warning text-dark"><div class="card-body"><h5>{{ pending_requests }}</h5><small>Pending</small></div></div></div>
-            <div class="col-md-3"><div class="card text-center bg-info text-white"><div class="card-body"><h5>{{ completed_this_month }}</h5><small>This month</small></div></div></div>
+<div class="container-fluid">
+    <h2>Welcome, {{ request.user.get_full_name }}!</h2>
+    <p class="text-muted">Fleet overview at a glance.</p>
+    <div class="row g-4">
+        <!-- Your 4 cards -->
+         <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5>Vehicles</h5>
+                    <h3>{{ stats.vehicles }} / {{ stats.available }} Available</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5>Drivers</h5>
+                    <h3>{{ stats.drivers }} / {{ stats.active_drivers }} Active</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5>Pending</h5>
+                    <h3>{{ stats.pending }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5>Trips</h5>
+                    <h3>{{ stats.completed }} This month</h3>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
+
+
+
+
+

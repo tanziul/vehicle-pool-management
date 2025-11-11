@@ -1,0 +1,24 @@
+<!-- templates/user/base.html -->
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="d-flex">
+    {% include 'user/sidebar.html' %}
+
+    <div class="flex-grow-1 p-4" style="margin-left: 260px;">
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block user_content %}{% endblock %}
+    </div>
+</div>
+{% endblock %}

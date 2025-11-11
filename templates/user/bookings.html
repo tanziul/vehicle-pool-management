@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 {% block title %}New Booking{% endblock %}
 
 {% block content %}
@@ -9,7 +9,7 @@
             {% csrf_token %}
             {{ form.as_p }}
             <button type="submit" class="btn btn-primary btn-lg">Submit Request</button>
-            <a href="{% url 'employee_dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
+            <a href="{% url 'user_dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
         </form>
     </div>
 </div>

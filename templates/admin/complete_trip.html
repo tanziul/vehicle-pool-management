@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Complete Trip{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Complete Trip</h2>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <h5>Trip Details</h5>
+            <p>
+                <strong>Employee:</strong> {{ booking.employee.get_full_name }}<br>
+                <strong>Vehicle:</strong> {{ booking.vehicle }}<br>
+                <strong>Destination:</strong> {{ booking.destination }}<br>
+                <strong>Time:</strong> {{ booking.start_time|date:"d M Y H:i" }} → {{ booking.end_time|date:"H:i" }}
+            </p>
+
+            <hr>
+
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Complete Trip</button>
+                    <a href="{% url 'admin_bookings' %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

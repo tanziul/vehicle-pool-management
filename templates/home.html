@@ -1,9 +1,10 @@
-{% extends "base.html" %}
-{% block title %}Home{% endblock %}
+﻿{% extends "base.html" %}
+{% block title %}Home - VPMS{% endblock %}
+
 {% block content %}
-<div class="text-center mt-5 py-5">
-    <h1 class="display-4 text-primary fw-bold">Vehicle Pool Management System</h1>
+<div class="text-center py-5">
+    <h1 class="display-4 text-primary">Vehicle Pool Management System</h1>
     <p class="lead">Efficiently manage vehicle bookings and trips.</p>
-    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">Login</a>
+    <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-5">Login</a>
 </div>
 {% endblock %}

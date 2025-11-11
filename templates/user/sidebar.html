@@ -1,5 +1,17 @@
-<div class="list-group shadow-sm">
-    <a href="{% url 'user_dashboard' %}" class="list-group-item list-group-item-action active">Dashboard</a>
-    <a href="{% url 'user_bookings' %}" class="list-group-item list-group-item-action">Bookings</a>
-    <a href="{% url 'user_reports' %}" class="list-group-item list-group-item-action">Reports</a>
+﻿<!-- templates/user/sidebar.html -->
+<div class="sidebar bg-light">
+    <div class="logo text-primary p-3">
+        <i class="fas fa-car-side"></i> VPMS
+    </div>
+    <nav class="mt-3">
+        <a href="{% url 'user_dashboard' %}" class="nav-link {% if 'user_dashboard' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-home"></i> <span>Dashboard</span>
+        </a>
+        <a href="{% url 'user_bookings' %}" class="nav-link {% if 'user_bookings' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-list"></i> <span>My Bookings</span>
+        </a>
+        <a href="{% url 'user_reports' %}" class="nav-link {% if 'user_reports' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="fas fa-file-alt"></i> <span>Trip Reports</span>
+        </a>
+    </nav>
 </div>
