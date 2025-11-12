@@ -10,6 +10,8 @@
         </button>
     </div>
 
+    <p class="text-muted mb-4">Add, edit, and manually control vehicle availability.</p>
+
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-light">
@@ -35,14 +37,21 @@
                         <span class="text-muted">—</span>
                         {% endif %}
                     </td>
-                    <td>
-                        <span class="badge rounded-pill
-                            {% if v.status == 'Available' %}bg-success
-                            {% elif v.status == 'Booked' %}bg-warning
-                            {% else %}bg-secondary{% endif %}">
-                            {{ v.status }}
-                        </span>
-                    </td>
+<td>
+    <form method="post" action="{% url 'update_vehicle_status' v.id %}" class="d-inline">
+        {% csrf_token %}
+        <select name="status" class="form-select form-select-sm w-auto d-inline" 
+                onchange="this.form.submit()"
+                {% if v.status == 'Booked' and v.is_in_use %}disabled{% endif %}>
+            <option value="Available" {% if v.status == 'Available' %}selected{% endif %}>Available</option>
+            <option value="Booked" {% if v.status == 'Booked' %}selected{% endif %}>Booked</option>
+            <option value="Maintenance" {% if v.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+        </select>
+    </form>
+    {% if v.status == 'Booked' and v.is_in_use %}
+    <small class="text-danger d-block mt-1">In use</small>
+    {% endif %}
+</td>
                     <td>
                         <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editVehicle{{ v.id }}">
                             Edit
@@ -63,15 +72,15 @@
                                 <div class="modal-body">
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label class="form-label">Plate Number</label>
+                                            <label class="form-label">Plate Number *</label>
                                             <input name="vehicle_number" value="{{ v.vehicle_number }}" class="form-control" required>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label">Model</label>
+                                            <label class="form-label">Model *</label>
                                             <input name="model" value="{{ v.model }}" class="form-control" required>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label">Seats</label>
+                                            <label class="form-label">Seats *</label>
                                             <input name="capacity" value="{{ v.capacity }}" class="form-control" type="number" min="1" required>
                                         </div>
                                         <div class="col-md-6">

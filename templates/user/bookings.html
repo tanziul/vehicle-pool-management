@@ -1,16 +1,59 @@
-﻿{% extends "base.html" %}
-{% block title %}New Booking{% endblock %}
+﻿{% extends "user/base.html" %}
+{% block page_title %}My Bookings{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Request Vehicle</h2>
-<div class="card shadow">
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary btn-lg">Submit Request</button>
-            <a href="{% url 'user_dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
-        </form>
+<div class="container-fluid">
+    <h3 class="mb-3">My Booking History</h3>
+    <p class="text-muted mb-4">Track your trip requests and statuses.</p>
+
+    {% if bookings %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Vehicle</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td>
+                        <strong>{{ b.vehicle.model }}</strong><br>
+                        <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
+                    </td>
+                    <td>{{ b.start_time|date:"M d, Y H:i" }}</td>
+                    <td>{{ b.end_time|date:"M d, Y H:i" }}</td>
+                    <td>
+                        <span class="badge rounded-pill
+                            {% if b.status == 'Approved' %}bg-success
+                            {% elif b.status == 'Pending' %}bg-warning
+                            {% elif b.status == 'Rejected' %}bg-danger
+                            {% else %}bg-secondary{% endif %}">
+                            {{ b.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if b.priority == 5 %}bg-danger
+                            {% elif b.priority >= 3 %}bg-warning
+                            {% else %}bg-info{% endif %}">
+                            {{ b.get_priority_display }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+    {% else %}
+    <div class="alert alert-info text-center py-5">
+        <p>No booking history yet.</p>
+        <a href="{% url 'user_dashboard' %}" class="btn btn-primary">Request a Vehicle</a>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

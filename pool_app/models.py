@@ -33,134 +33,97 @@ class User(AbstractUser):
         return f"{self.get_full_name()} ({self.role})"
 
 
-class Driver(models.Model):
-    """
-    Driver — NOT a User. No login.
-    """
-    name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15, unique=True)
-    license_no = models.CharField(max_length=50, unique=True)
-    status = models.CharField(
-        max_length=20,
-        choices=[('Active', 'Active'), ('Inactive', 'Inactive')],
-        default='Active'
-    )
-    assigned_vehicle = models.OneToOneField(
-        'Vehicle',
+# pool_app/models.py
+
+class Vehicle(models.Model):
+    STATUS_CHOICES = [
+        ('Available', 'Available'),
+        ('Booked', 'Booked'),
+        ('Maintenance', 'Maintenance'),
+    ]
+
+    model = models.CharField(max_length=100)
+    vehicle_number = models.CharField(max_length=20, unique=True)
+    capacity = models.PositiveIntegerField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')
+
+    # CORRECT: OneToOne → Driver
+    assigned_driver = models.OneToOneField(
+        'Driver',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='assigned_driver'  # UNIQUE reverse name
+        related_name='vehicle'  # Driver → vehicle
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-status', 'name']
-
-    def __str__(self):
-        return f"{self.name} ({self.license_no})"
-
-
-class Vehicle(models.Model):
-    """
-    Vehicle in the pool.
-    One driver via assigned_vehicle → assigned_driver
-    """
-    vehicle_number = models.CharField(max_length=20, unique=True)
-    model = models.CharField(max_length=50)
-    capacity = models.IntegerField(help_text="Number of seats")
-    status = models.CharField(
-           max_length=20,
-        choices=[
-        ('Available', 'Available'),
-        ('Booked', 'Booked'),
-        ('Maintenance', 'Maintenance')
-    ],
-    default='Available'
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['status', 'model']
 
     def __str__(self):
         return f"{self.model} ({self.vehicle_number})"
 
-    # ACCESS DRIVER VIA: vehicle.assigned_driver
-    @property
-    def driver(self):
-        return self.assigned_driver
 
+class Driver(models.Model):
+    name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=15)
+    license_no = models.CharField(max_length=50, unique=True)
+    status = models.CharField(max_length=20, choices=[
+        ('Active', 'Active'),
+        ('Inactive', 'Inactive'),
+    ], default='Active')
 
-class Booking(models.Model):
-    PRIORITY_CHOICES = [
-        ('High', 'High'), ('Medium', 'Medium'), ('Low', 'Low')
-    ]
-    STATUS_CHOICES = [
-        ('Pending', 'Pending'), ('Approved', 'Approved'),
-        ('Completed', 'Completed'), ('Rejected', 'Rejected')
-    ]
-
-    employee = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='bookings',
-        limit_choices_to={'role__in': ['Employee', 'Manager', 'HR']}
-    )
-    vehicle = models.ForeignKey(
+    # CORRECT: ForeignKey → Vehicle
+    assigned_vehicle = models.ForeignKey(
         Vehicle,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='bookings'
+        related_name='drivers'  # Vehicle → drivers
     )
-    destination = models.CharField(max_length=200)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    reason = models.TextField()
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    approved_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='approved_bookings',
-        limit_choices_to={'role': 'Admin'}
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-
-    def save(self, *args, **kwargs):
-        if not self.priority:
-            priority_map = {
-                'Admin': 'High', 'Manager': 'High',
-                'HR': 'Medium', 'Employee': 'Low'
-            }
-            self.priority = priority_map.get(self.employee.role, 'Low')
-        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.employee} → {self.destination}"
+        return self.name
+class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+        ('Completed', 'Completed'),
+    ]
+    PRIORITY_CHOICES = [
+        ('Low', 'Low'),
+        ('Medium', 'Medium'),
+        ('High', 'High'),
+        ('Urgent', 'Urgent'),
+    ]
 
+    employee = models.ForeignKey(User, on_delete=models.CASCADE)
+    vehicle = models.ForeignKey(
+        Vehicle, on_delete=models.SET_NULL, null=True, blank=True, related_name='bookings'
+    )
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    destination = models.CharField(max_length=200)  # ← ADD
+    purpose = models.TextField()                   # ← ADD
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='Medium')  # ← ADD
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_bookings')
+    approved_at = models.DateTimeField(null=True, blank=True)
 
+    def __str__(self):
+        return f"{self.employee} - {self.vehicle} - {self.start_time}"
 class TripReport(models.Model):
     booking = models.OneToOneField(
         Booking,
         on_delete=models.CASCADE,
         related_name='trip_report'
     )
-    distance = models.FloatField(help_text="KM")
-    fuel_used = models.FloatField(help_text="Liters")
+    distance_travelled = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True
+    )
+    fuel_used = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True
+    )
     notes = models.TextField(blank=True)
     completed_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-completed_at']
-
     def __str__(self):
-        return f"Trip: {self.booking} ({self.distance} KM)"
-    
-    
+        return f"Trip Report #{self.booking.id}"
