@@ -146,7 +146,7 @@ def admin_vehicles(request):
     
     vehicles = Vehicle.objects.select_related('assigned_driver').all().order_by('-id')
     
-    # PRE-COMPUTE: Is vehicle in active use?
+   
     for v in vehicles:
         v.is_in_use = v.bookings.filter(status='Approved').exists()
     
@@ -177,14 +177,13 @@ def update_vehicle_status(request, pk):
     if request.method == 'POST':
         new_status = request.POST.get('status')
         
-        # NOW SAFE: STATUS_CHOICES is defined
+       
         valid_statuses = [choice[0] for choice in Vehicle.STATUS_CHOICES]
         
         if new_status not in valid_statuses:
             messages.error(request, 'Invalid status selected.')
             return redirect('admin_vehicles')
         
-        # BLOCK FREEING IF IN USE
         if new_status == 'Available' and vehicle.bookings.filter(status='Approved').exists():
             messages.error(request, f'Cannot free {vehicle.model}: Active trip in progress.')
         else:
@@ -406,15 +405,13 @@ def approve_booking(request, pk):
     booking = get_object_or_404(Booking, pk=pk, status='Pending')
     
     if request.method == 'POST':
-        vehicle_id = request.POST.get('vehicle')
-        if not vehicle_id:
-            messages.error(request, 'Please select a vehicle.')
+        vehicle = booking.vehicle  # ← ALREADY SET BY USER
+        
+        if not vehicle or vehicle.status != 'Available':
+            messages.error(request, 'Vehicle no longer available.')
             return redirect('admin_bookings')
         
-        vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')
-        
         with transaction.atomic():
-            booking.vehicle = vehicle
             booking.status = 'Approved'
             booking.approved_by = request.user
             booking.approved_at = timezone.now()
@@ -423,7 +420,9 @@ def approve_booking(request, pk):
             vehicle.status = 'Booked'
             vehicle.save()
         
-        messages.success(request, f'Booking #{booking.id} approved with {vehicle.model}.')
+        messages.success(request, 
+            f'Approved! {vehicle.model} assigned to {booking.employee.get_full_name()}'
+        )
     
     return redirect('admin_bookings')
 
