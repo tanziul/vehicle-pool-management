@@ -3,7 +3,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    # NO admin.site.urls
+    
     path('', include('pool_app.urls')),
 ]
 

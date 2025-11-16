@@ -1,4 +1,4 @@
-# pool_app/urls.py
+
 from django.urls import path
 from . import views
 
@@ -19,15 +19,17 @@ urlpatterns = [
     path('admin/', views.admin_dashboard, name='admin_dashboard'),
     path('admin/bookings/', views.admin_bookings, name='admin_bookings'),
     path('admin/vehicles/', views.admin_vehicles, name='admin_vehicles'),
-    path('admin/vehicles/update-status/<int:pk>/', 
-         views.update_vehicle_status, name='update_vehicle_status'),  # FIXED: path() wrapper
+    path('admin/vehicles/update-status/<int:pk>/',  views.update_vehicle_status, name='update_vehicle_status'),  
     path('admin/edit-vehicle/<int:pk>/', views.edit_vehicle, name='edit_vehicle'),
-    
+    path('admin/vehicles/delete/<int:pk>/', views.delete_vehicle, name='delete_vehicle'),
+
+
+
     # === DRIVERS ===
     path('admin/drivers/', views.admin_drivers, name='admin_drivers'),
-    path('admin/add-driver/', views.add_driver, name='add_driver'),
-    path('admin/edit-driver/<int:pk>/', views.edit_driver, name='edit_driver'),
-    path('admin/delete-driver/<int:pk>/', views.delete_driver, name='delete_driver'),
+    path('admin/drivers/add/', views.add_driver, name='add_driver'),
+    path('admin/drivers/edit/<int:pk>/', views.edit_driver, name='edit_driver'),
+    path('admin/drivers/delete/<int:pk>/', views.delete_driver, name='delete_driver'),
 
     # === USERS ===
     path('admin/users/', views.admin_users, name='admin_users'),

@@ -1,49 +1,113 @@
 ﻿{% extends "admin/base.html" %}
-{% block page_title %}Dashboard{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
-    <h2>Welcome, {{ request.user.get_full_name }}!</h2>
-    <p class="text-muted">Fleet overview at a glance.</p>
-    <div class="row g-4">
-        <!-- Your 4 cards -->
-         <div class="col-md-3">
-            <div class="card text-white bg-primary">
+    <div class="row">
+        <div class="col-12 mb-4">
+            <h2>Welcome, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>!</h2>
+            <p class="text-muted">Fleet overview at a glance.</p>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="row g-3">
+        <!-- VEHICLES -->
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h5>Vehicles</h5>
-                    <h3>{{ stats.vehicles }} / {{ stats.available }} Available</h3>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title mb-0">{{ total_vehicles }}</h5>
+                            <p class="text-muted small mb-0">Vehicles</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-truck fs-2 text-primary"></i>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-success">{{ available_vehicles }} Available</span>
+                        <span class="text-warning">{{ maintenance_vehicles }} Maintenance</span>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- DRIVERS -->
         <div class="col-md-3">
-            <div class="card text-white bg-success">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h5>Drivers</h5>
-                    <h3>{{ stats.drivers }} / {{ stats.active_drivers }} Active</h3>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title mb-0">{{ total_drivers }}</h5>
+                            <p class="text-muted small mb-0">Drivers</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-person-badge fs-2 text-success"></i>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-success">{{ active_drivers }} Active</span>
+                        <span class="text-secondary">{{ inactive_drivers }} Inactive</span>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- BOOKINGS -->
         <div class="col-md-3">
-            <div class="card text-white bg-warning">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h5>Pending</h5>
-                    <h3>{{ stats.pending }}</h3>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title mb-0">{{ pending_requests }}</h5>
+                            <p class="text-muted small mb-0">Pending</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock-history fs-2 text-warning"></i>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="small">
+                        <span class="text-success">{{ approved_requests }} Approved</span>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- TRIPS -->
         <div class="col-md-3">
-            <div class="card text-white bg-info">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h5>Trips</h5>
-                    <h3>{{ stats.completed }} This month</h3>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h5 class="card-title mb-0">{{ completed_this_month }}</h5>
+                            <p class="text-muted small mb-0">Trips This Month</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check2-circle fs-2 text-info"></i>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="small">
+                        <span class="text-success">{{ completed_requests }} Total Completed</span>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="d-flex gap-2">
+                <a href="{% url 'admin_vehicles' %}" class="btn btn-outline-primary">Manage Vehicles</a>
+                <a href="{% url 'admin_drivers' %}" class="btn btn-outline-success">Manage Drivers</a>
+                <a href="{% url 'admin_bookings' %}" class="btn btn-outline-warning">View Bookings</a>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-
-
-
-
-

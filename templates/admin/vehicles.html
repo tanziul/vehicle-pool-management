@@ -9,8 +9,7 @@
             Add Vehicle
         </button>
     </div>
-
-    <p class="text-muted mb-4">Add, edit, and manually control vehicle availability.</p>
+    <p class="text-muted mb-4">Add, edit, and assign drivers to vehicles.</p>
 
     <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -34,28 +33,33 @@
                         {% if v.assigned_driver %}
                         <span class="badge bg-success">{{ v.assigned_driver.name }}</span>
                         {% else %}
-                        <span class="text-muted">—</span>
+                        <em class="text-muted">—</em>
                         {% endif %}
                     </td>
-<td>
-    <form method="post" action="{% url 'update_vehicle_status' v.id %}" class="d-inline">
-        {% csrf_token %}
-        <select name="status" class="form-select form-select-sm w-auto d-inline" 
-                onchange="this.form.submit()"
-                {% if v.status == 'Booked' and v.is_in_use %}disabled{% endif %}>
-            <option value="Available" {% if v.status == 'Available' %}selected{% endif %}>Available</option>
-            <option value="Booked" {% if v.status == 'Booked' %}selected{% endif %}>Booked</option>
-            <option value="Maintenance" {% if v.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
-        </select>
-    </form>
-    {% if v.status == 'Booked' and v.is_in_use %}
-    <small class="text-danger d-block mt-1">In use</small>
-    {% endif %}
-</td>
                     <td>
-                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editVehicle{{ v.id }}">
-                            Edit
-                        </button>
+                        <form method="post" action="{% url 'update_vehicle_status' v.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <select name="status" class="form-select form-select-sm w-auto d-inline"
+                                    onchange="this.form.submit()"
+                                    {% if v.is_in_use %}disabled{% endif %}>
+                                {% for val, label in v.STATUS_CHOICES %}
+                                <option value="{{ val }}" {% if val == v.status %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                        {% if v.is_in_use %}
+                        <small class="text-danger d-block mt-1">In use</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editVehicle{{ v.id }}">
+                                Edit
+                            </button>
+                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteVehicle{{ v.id }}">
+                                Delete
+                            </button>
+                        </div>
                     </td>
                 </tr>
 
@@ -86,9 +90,20 @@
                                         <div class="col-md-6">
                                             <label class="form-label">Status</label>
                                             <select name="status" class="form-select">
-                                                <option value="Available" {% if v.status == 'Available' %}selected{% endif %}>Available</option>
-                                                <option value="Booked" {% if v.status == 'Booked' %}selected{% endif %}>Booked</option>
-                                                <option value="Maintenance" {% if v.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                                                {% for val, label in v.STATUS_CHOICES %}
+                                                <option value="{{ val }}" {% if val == v.status %}selected{% endif %}>{{ label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label">Assign Driver</label>
+                                            <select name="assigned_driver" class="form-select">
+                                                <option value="">— No Driver —</option>
+                                                {% for d in drivers %}
+                                                <option value="{{ d.id }}" {% if d == v.assigned_driver %}selected{% endif %}>
+                                                    {{ d.name }} ({{ d.license_no }})
+                                                </option>
+                                                {% endfor %}
                                             </select>
                                         </div>
                                     </div>
@@ -99,6 +114,38 @@
                                 </div>
                             </div>
                         </form>
+                    </div>
+                </div>
+
+                <!-- DELETE CONFIRM MODAL -->
+                <div class="modal fade" id="deleteVehicle{{ v.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <form method="post" action="{% url 'delete_vehicle' v.id %}">
+                                {% csrf_token %}
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title">Delete Vehicle?</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p>Are you sure you want to <strong>delete</strong>:</p>
+                                    <ul class="list-unstyled mb-0">
+                                        <li><strong>Model:</strong> {{ v.model }}</li>
+                                        <li><strong>Plate:</strong> {{ v.vehicle_number }}</li>
+                                        <li><strong>Driver:</strong> {{ v.assigned_driver.name|default:"None" }}</li>
+                                    </ul>
+                                    {% if v.pending_bookings_count > 0 %}
+                                    <div class="alert alert-warning mt-3 mb-0">
+                                        <strong>Warning:</strong> {{ v.pending_bookings_count }} pending booking(s) will be cancelled.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 {% endfor %}
@@ -118,7 +165,31 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    {{ form.as_p }}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Model *</label>
+                            <input name="model" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Plate Number *</label>
+                            <input name="vehicle_number" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Seats *</label>
+                            <input name="capacity" type="number" min="1" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Assign Driver <small class="text-muted">(Available only)</small></label>
+                            <select name="assigned_driver" class="form-select">
+                                <option value="">— No Driver —</option>
+                                {% for d in drivers %}
+                                <option value="{{ d.id }}">{{ d.name }} ({{ d.license_no }})</option>
+                                {% empty %}
+                                <option disabled>No available drivers</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -128,4 +199,5 @@
         </form>
     </div>
 </div>
+
 {% endblock %}

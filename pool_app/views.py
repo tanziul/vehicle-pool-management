@@ -101,27 +101,40 @@ def request_vehicle(request, vehicle_id):
 # ======================
 # ADMIN DASHBOARD
 # ======================
+
+from django.utils import timezone
+from datetime import datetime
+
 @login_required
 def admin_dashboard(request):
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
     
+    now = timezone.now()
+    this_month = now.month
+    this_year = now.year
+
     stats = {
         'total_vehicles': Vehicle.objects.count(),
         'available_vehicles': Vehicle.objects.filter(status='Available').count(),
         'booked_vehicles': Vehicle.objects.filter(status='Booked').count(),
         'maintenance_vehicles': Vehicle.objects.filter(status='Maintenance').count(),
+        
         'total_drivers': Driver.objects.count(),
         'active_drivers': Driver.objects.filter(status='Active').count(),
+        'inactive_drivers': Driver.objects.filter(status='Inactive').count(),
+        
         'pending_requests': Booking.objects.filter(status='Pending').count(),
         'approved_requests': Booking.objects.filter(status='Approved').count(),
+        'completed_requests': Booking.objects.filter(status='Completed').count(),
+        
         'completed_this_month': TripReport.objects.filter(
-            completed_at__year=timezone.now().year,
-            completed_at__month=timezone.now().month
+            completed_at__year=this_year,
+            completed_at__month=this_month
         ).count(),
     }
-    return render(request, 'admin/dashboard.html', stats)
 
+    return render(request, 'admin/dashboard.html', stats)
 
 @login_required
 def admin_bookings(request):
@@ -137,34 +150,86 @@ def admin_bookings(request):
         'vehicles': available_vehicles,
         'now': now
     })
-
-
 @login_required
 def admin_vehicles(request):
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
     
     vehicles = Vehicle.objects.select_related('assigned_driver').all().order_by('-id')
+    available_drivers = Driver.objects.filter(status='Active', assigned_vehicle__isnull=True).order_by('name')
     
-   
     for v in vehicles:
         v.is_in_use = v.bookings.filter(status='Approved').exists()
+        v.pending_bookings_count = v.bookings.filter(status='Pending').count()  # ← PRE-CALCULATE
+
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                vehicle = Vehicle(
+                    model=request.POST['model'].strip(),
+                    vehicle_number=request.POST['vehicle_number'].strip(),
+                    capacity=int(request.POST['capacity']),
+                    status='Available'
+                )
+                vehicle.save()
+
+                driver_id = request.POST.get('assigned_driver')
+                if driver_id:
+                    driver = get_object_or_404(Driver, id=driver_id, assigned_vehicle__isnull=True)
+                    vehicle.assigned_driver = driver
+                    vehicle.save()
+
+                messages.success(request, f'Vehicle "{vehicle.model}" added.')
+        except Exception as e:
+            messages.error(request, f'Error: {e}')
+        return redirect('admin_vehicles')
     
-    form = VehicleForm()
+    return render(request, 'admin/vehicles.html', 
+    {
+        'vehicles': vehicles,
+        'drivers': available_drivers  
+    })
+
+
+
+@login_required
+def edit_vehicle(request, pk):
+    if not (request.user.is_superuser or request.user.role == 'Admin'):
+        return redirect('dashboard')
+    
+    vehicle = get_object_or_404(Vehicle, pk=pk)
+    
+   
+    available_drivers = Driver.objects.filter(
+        status='Active',
+        assigned_vehicle__isnull=True
+    ).exclude(id=vehicle.assigned_driver_id if vehicle.assigned_driver else None)
     
     if request.method == 'POST':
-        form = VehicleForm(request.POST)
-        if form.is_valid():
-            vehicle = form.save()
-            messages.success(request, f'Vehicle "{vehicle.model}" added successfully.')
-            return redirect('admin_vehicles')
-        else:
-            messages.error(request, 'Please correct the errors below.')
+        try:
+            with transaction.atomic():
+                vehicle.model = request.POST['model'].strip()
+                vehicle.vehicle_number = request.POST['vehicle_number'].strip()
+                vehicle.capacity = int(request.POST['capacity'])
+                new_status = request.POST.get('status')
+                if new_status in dict(Vehicle.STATUS_CHOICES):
+                    vehicle.status = new_status
+                
+                driver_id = request.POST.get('assigned_driver')
+                if driver_id:
+                    driver = get_object_or_404(Driver, id=driver_id, assigned_vehicle__isnull=True)
+                    if vehicle.assigned_driver:
+                        vehicle.assigned_driver = None
+                    vehicle.assigned_driver = driver
+                else:
+                    vehicle.assigned_driver = None
+                
+                vehicle.save()
+            messages.success(request, f'Vehicle "{vehicle.model}" updated.')
+        except Exception as e:
+            messages.error(request, f'Update failed: {e}')
     
-    return render(request, 'admin/vehicles.html', {
-        'vehicles': vehicles,
-        'form': form
-    })
+    return redirect('admin_vehicles')
 
 
 @login_required
@@ -176,40 +241,34 @@ def update_vehicle_status(request, pk):
     
     if request.method == 'POST':
         new_status = request.POST.get('status')
-        
-       
-        valid_statuses = [choice[0] for choice in Vehicle.STATUS_CHOICES]
-        
-        if new_status not in valid_statuses:
-            messages.error(request, 'Invalid status selected.')
-            return redirect('admin_vehicles')
-        
-        if new_status == 'Available' and vehicle.bookings.filter(status='Approved').exists():
-            messages.error(request, f'Cannot free {vehicle.model}: Active trip in progress.')
-        else:
-            old_status = vehicle.status
-            vehicle.status = new_status
-            vehicle.save()
-            messages.success(request, f'Status updated: {old_status} to {new_status}')
+        if new_status in dict(Vehicle.STATUS_CHOICES):
+            if new_status == 'Available' and vehicle.bookings.filter(status='Approved').exists():
+                messages.error(request, f'Cannot free {vehicle.model}: Active trip in progress.')
+            else:
+                vehicle.status = new_status
+                vehicle.save()
+                messages.success(request, f'Status: {new_status}')
     
     return redirect('admin_vehicles')
-
 @login_required
-def edit_vehicle(request, pk):
+def delete_vehicle(request, pk):
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
     
     vehicle = get_object_or_404(Vehicle, pk=pk)
     
     if request.method == 'POST':
-        try:
-            vehicle.vehicle_number = request.POST['vehicle_number'].strip()
-            vehicle.model = request.POST['model'].strip()
-            vehicle.capacity = int(request.POST['capacity'])
-            vehicle.save()
-            messages.success(request, f'Vehicle "{vehicle.model}" updated.')
-        except Exception as e:
-            messages.error(request, f'Update failed: {e}')
+        with transaction.atomic():
+            pending_count = vehicle.bookings.filter(status='Pending').count()
+            vehicle.bookings.filter(status='Pending').update(status='Cancelled')
+            
+            if vehicle.assigned_driver:
+                vehicle.assigned_driver = None
+            
+            vehicle_name = f"{vehicle.model} ({vehicle.vehicle_number})"
+            vehicle.delete()
+        
+        messages.success(request, f'Vehicle "{vehicle_name}" deleted. {pending_count} pending booking(s) cancelled.')
     
     return redirect('admin_vehicles')
 
@@ -220,11 +279,9 @@ def admin_drivers(request):
         return redirect('dashboard')
     
     drivers = Driver.objects.select_related('assigned_vehicle').all().order_by('-status', 'name')
-    available_vehicles = Vehicle.objects.filter(status='Available')
     
     return render(request, 'admin/drivers.html', {
-        'drivers': drivers,
-        'available_vehicles': available_vehicles
+        'drivers': drivers
     })
 
 
@@ -235,21 +292,15 @@ def add_driver(request):
     
     if request.method == 'POST':
         try:
-            vehicle = None
-            vehicle_id = request.POST.get('assigned_vehicle')
-            if vehicle_id:
-                vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')
-            
             Driver.objects.create(
                 name=request.POST['name'].strip(),
                 phone=request.POST['phone'].strip(),
                 license_no=request.POST['license_no'].strip(),
-                status=request.POST.get('status', 'Active'),
-                assigned_vehicle=vehicle
+                status=request.POST.get('status', 'Active')
             )
-            messages.success(request, 'Driver added successfully.')
+            messages.success(request, 'Driver added.')
         except Exception as e:
-            messages.error(request, f'Error adding driver: {e}')
+            messages.error(request, f'Error: {e}')
     
     return redirect('admin_drivers')
 
@@ -263,28 +314,14 @@ def edit_driver(request, pk):
     
     if request.method == 'POST':
         try:
-            old_vehicle = driver.assigned_vehicle
-            new_vehicle = None
-            vehicle_id = request.POST.get('assigned_vehicle')
-            if vehicle_id:
-                new_vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')
-            
-            # Free old vehicle if changed
-            if old_vehicle and old_vehicle != new_vehicle:
-                if old_vehicle.status != 'Booked':
-                    old_vehicle.assigned_driver = None
-                    old_vehicle.save()
-            
             driver.name = request.POST['name'].strip()
             driver.phone = request.POST['phone'].strip()
             driver.license_no = request.POST['license_no'].strip()
             driver.status = request.POST['status']
-            driver.assigned_vehicle = new_vehicle
             driver.save()
-            
             messages.success(request, f'Driver "{driver.name}" updated.')
         except Exception as e:
-            messages.error(request, f'Update failed: {e}')
+            messages.error(request, f'Error: {e}')
     
     return redirect('admin_drivers')
 
@@ -296,16 +333,14 @@ def delete_driver(request, pk):
     
     driver = get_object_or_404(Driver, pk=pk)
     vehicle = driver.assigned_vehicle
-    
     driver.delete()
     
-    if vehicle and vehicle.status != 'Booked':
+    if vehicle:
         vehicle.assigned_driver = None
         vehicle.save()
     
-    messages.success(request, f'Driver "{driver.name}" deleted.')
+    messages.success(request, f'Driver deleted.')
     return redirect('admin_drivers')
-
 
 @login_required
 def admin_reports(request):
@@ -419,6 +454,7 @@ def approve_booking(request, pk):
             
             vehicle.status = 'Booked'
             vehicle.save()
+            
         
         messages.success(request, 
             f'Approved! {vehicle.model} assigned to {booking.employee.get_full_name()}'

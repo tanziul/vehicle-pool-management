@@ -10,7 +10,7 @@
         </button>
     </div>
 
-    <p class="text-muted mb-4">Add and manage driver details. Drivers do not log in.</p>
+    <p class="text-muted mb-4">Drivers do not log in. Assign them to vehicles from the Vehicles page.</p>
 
     <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -32,90 +32,72 @@
                     <td>{{ d.license_no }}</td>
                     <td>
                         {% if d.assigned_vehicle %}
-                        <span class="badge bg-success">
+                        <span class="badge bg-info">
                             {{ d.assigned_vehicle.model }} ({{ d.assigned_vehicle.vehicle_number }})
                         </span>
                         {% else %}
-                        <span class="text-muted">Not Assigned</span>
+                        <em class="text-muted">Not Assigned</em>
                         {% endif %}
                     </td>
                     <td>
-                        <span class="badge rounded-pill
-                            {% if d.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                        <span class="badge {% if d.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
                             {{ d.status }}
                         </span>
                     </td>
                     <td>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editDriver{{ d.id }}">
-                                Edit
-                            </button>
-                            <form method="post" action="{% url 'delete_driver' d.id %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('Delete {{ d.name }}?')">
-                                    Delete
-                                </button>
-                            </form>
-                        </div>
+                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editDriver{{ d.id }}">
+                            Edit
+                        </button>
+                        <form method="post" action="{% url 'delete_driver' d.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ d.name }}?')">Delete</button>
+                        </form>
                     </td>
                 </tr>
 
                 <!-- EDIT MODAL -->
                 <div class="modal fade" id="editDriver{{ d.id }}" tabindex="-1">
-                    <div class="modal-dialog modal-lg">
+                    <div class="modal-dialog">
                         <form method="post" action="{% url 'edit_driver' d.id %}">
                             {% csrf_token %}
                             <div class="modal-content">
-                                <div class="modal-header bg-warning text-dark">
-                                    <h5 class="modal-title">Edit Driver: {{ d.name }}</h5>
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit Driver</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Name *</label>
-                                            <input type="text" name="name" value="{{ d.name }}" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Phone *</label>
-                                            <input type="text" name="phone" value="{{ d.phone }}" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">License No *</label>
-                                            <input type="text" name="license_no" value="{{ d.license_no }}" class="form-control" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label">Status</label>
-                                            <select name="status" class="form-select">
-                                                <option value="Active" {% if d.status == 'Active' %}selected{% endif %}>Active</option>
-                                                <option value="Inactive" {% if d.status == 'Inactive' %}selected{% endif %}>Inactive</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label class="form-label">Assign Vehicle (Only Available)</label>
-                                            <select name="assigned_vehicle" class="form-select">
-                                                <option value="">-- None --</option>
-                                                {% for v in available_vehicles %}
-                                                {% if v.status == 'Available' %}
-                                                <option value="{{ v.id }}"
-                                                    {% if v == d.assigned_vehicle %}selected{% endif %}>
-                                                    {{ v.model }} ({{ v.vehicle_number }})
-                                                </option>
-                                                {% endif %}
-                                                {% endfor %}
-                                            </select>
-                                        </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Name *</label>
+                                        <input name="name" value="{{ d.name }}" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone *</label>
+                                        <input name="phone" value="{{ d.phone }}" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">License No *</label>
+                                        <input name="license_no" value="{{ d.license_no }}" class="form-control" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select name="status" class="form-select">
+                                            <option value="Active" {% if d.status == 'Active' %}selected{% endif %}>Active</option>
+                                            <option value="Inactive" {% if d.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="submit" class="btn btn-warning">Update Driver</button>
+                                    <button type="submit" class="btn btn-warning">Update</button>
                                 </div>
                             </div>
                         </form>
                     </div>
                 </div>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No drivers yet.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -124,7 +106,7 @@
 
 <!-- ADD DRIVER MODAL -->
 <div class="modal fade" id="addDriverModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <form method="post" action="{% url 'add_driver' %}">
             {% csrf_token %}
             <div class="modal-content">
@@ -133,42 +115,29 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Name *</label>
-                            <input type="text" name="name" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Phone *</label>
-                            <input type="text" name="phone" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">License No *</label>
-                            <input type="text" name="license_no" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Status</label>
-                            <select name="status" class="form-select">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label">Assign Vehicle (Optional)</label>
-                            <select name="assigned_vehicle" class="form-select">
-                                <option value="">-- None --</option>
-                                {% for v in available_vehicles %}
-                                {% if v.status == 'Available' %}
-                                <option value="{{ v.id }}">{{ v.model }} ({{ v.vehicle_number }})</option>
-                                {% endif %}
-                                {% endfor %}
-                            </select>
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label">Name *</label>
+                        <input name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone *</label>
+                        <input name="phone" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">License No *</label>
+                        <input name="license_no" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create Driver</button>
+                    <button type="submit" class="btn btn-primary">Add Driver</button>
                 </div>
             </div>
         </form>

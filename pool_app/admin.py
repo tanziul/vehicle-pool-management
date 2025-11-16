@@ -27,6 +27,6 @@ class TripReportAdmin(admin.ModelAdmin):
     def get_distance(self, obj):
         return f"{obj.distance_travelled} km" if obj.distance_travelled else "—"
     get_distance.short_description = 'Distance'
-    def get_fuel(self, obj):
+    def get_fuel(self, obj):  
         return f"{obj.fuel_used} L" if obj.fuel_used else "—"
     get_fuel.short_description = 'Fuel'
