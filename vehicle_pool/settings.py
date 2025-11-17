@@ -18,6 +18,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'pool_app.apps.PoolAppConfig',
+
+    
 ]
 
 MIDDLEWARE = [

@@ -1,6 +1,5 @@
 {% extends "admin/base.html" %}
 {% block page_title %}Manage Drivers{% endblock %}
-
 {% block content %}
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -9,7 +8,6 @@
             Add Driver
         </button>
     </div>
-
     <p class="text-muted mb-4">Drivers do not log in. Assign them to vehicles from the Vehicles page.</p>
 
     <div class="table-responsive">
@@ -27,35 +25,49 @@
             <tbody>
                 {% for d in drivers %}
                 <tr>
-                    <td><strong>{{ d.name }}</strong></td>
-                    <td>{{ d.phone }}</td>
-                    <td>{{ d.license_no }}</td>
-                    <td>
-                        {% if d.assigned_vehicle %}
-                        <span class="badge bg-info">
-                            {{ d.assigned_vehicle.model }} ({{ d.assigned_vehicle.vehicle_number }})
+                 <td><strong>{{ driver.name }}</strong></td>
+                  <td>{{ driver.phone }}</td>
+                   <td>{{ driver.license_no }}</td>
+                   <td>
+                  {% if driver.assigned_vehicle %}
+                        <span class="badge bg-success">
+                          {{ driver.assigned_vehicle.model }} ({{ driver.assigned_vehicle.vehicle_number }})
                         </span>
-                        {% else %}
-                        <em class="text-muted">Not Assigned</em>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="badge {% if d.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
-                            {{ d.status }}
-                        </span>
-                    </td>
-                    <td>
+                      {% else %}
+                               <em class="text-muted">Not Assigned</em>
+                    {% endif %}
+                        </td>
+                          <td>
+                     <span class="badge bg-{% if driver.status == 'Active' %}success{% else %}secondary{% endif %}">
+                         {{ driver.status }}
+                      </span>
+                     </td>
+                   <td>
+                      <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editDriver{{ driver.id }}">
+            Edit
+        </button>
+    </td>
+</tr>
+                        <!-- EDIT BUTTON -->
                         <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editDriver{{ d.id }}">
                             Edit
                         </button>
-                        <form method="post" action="{% url 'delete_driver' d.id %}" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete {{ d.name }}?')">Delete</button>
-                        </form>
+
+                        <!-- DELETE BUTTON → Opens Shared Modal -->
+                        <button type="button"
+                                class="btn btn-sm btn-danger"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteDriverModal"
+                                onclick="prepareDeleteDriver({{ d.id }}, '{{ d.name|escapejs }}', 
+                                    {% if d.assigned_vehicle %}
+                                        '{{ d.assigned_vehicle.model|escapejs }} ({{ d.assigned_vehicle.vehicle_number|escapejs }})'
+                                    {% else %}null{% endif %})">
+                            Delete
+                        </button>
                     </td>
                 </tr>
 
-                <!-- EDIT MODAL -->
+                <!-- EDIT MODAL (unchanged) -->
                 <div class="modal fade" id="editDriver{{ d.id }}" tabindex="-1">
                     <div class="modal-dialog">
                         <form method="post" action="{% url 'edit_driver' d.id %}">
@@ -104,7 +116,36 @@
     </div>
 </div>
 
-<!-- ADD DRIVER MODAL -->
+<!-- ====================== SHARED DELETE MODAL (Same as Vehicle) ====================== -->
+<div class="modal fade" id="deleteDriverModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form method="post" id="deleteDriverForm">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">Delete Driver</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong id="modalDriverName"></strong>?</p>
+                    <p id="vehicleWarning" class="text-warning d-none mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        This driver is assigned to vehicle: <strong id="modalVehicleInfo"></strong>.<br>
+                        <span class="text-success">The vehicle will remain in the system and become unassigned.</span>
+                    </p>
+                    <p id="noVehicleInfo" class="text-muted">No vehicle is assigned to this driver.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- =========================================================================== -->
+
+<!-- ADD DRIVER MODAL (unchanged) -->
 <div class="modal fade" id="addDriverModal" tabindex="-1">
     <div class="modal-dialog">
         <form method="post" action="{% url 'add_driver' %}">
@@ -143,4 +184,27 @@
         </form>
     </div>
 </div>
+
+<!-- JavaScript to Populate Delete Modal -->
+<script>
+function prepareDeleteDriver(driverId, driverName, vehicleInfo) {
+    const form = document.getElementById('deleteDriverForm');
+    form.action = "{% url 'delete_driver' 0 %}".replace('0', driverId);
+
+    document.getElementById('modalDriverName').textContent = driverName;
+
+    const warning = document.getElementById('vehicleWarning');
+    const noVehicle = document.getElementById('noVehicleInfo');
+    const vehicleSpan = document.getElementById('modalVehicleInfo');
+
+    if (vehicleInfo) {
+        warning.classList.remove('d-none');
+        noVehicle.classList.add('d-none');
+        vehicleSpan.textContent = vehicleInfo;
+    } else {
+        warning.classList.add('d-none');
+        noVehicle.classList.remove('d-none');
+    }
+}
+</script>
 {% endblock %}
