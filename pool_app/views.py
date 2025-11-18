@@ -9,25 +9,37 @@ from .models import User, Driver, Vehicle, Booking, TripReport
 from .forms import BookingForm, TripReportForm
 
 
-# ======================
-# AUTO UPDATE EXPIRED BOOKINGS (GLOBAL)
-# ======================
 def update_expired_bookings():
-    """Auto-complete bookings whose end_time has passed and free the vehicle"""
+    """Auto-complete expired bookings and free vehicles"""
+    from django.db import transaction
+
     now = timezone.now()
-    expired = Booking.objects.filter(
+    expired_bookings = Booking.objects.filter(
         status='Approved',
         end_time__lt=now
     ).select_related('vehicle')
 
-    for booking in expired:
-        if booking.vehicle:
+    updated = 0
+    for booking in expired_bookings:
+        changed = False
+
+        # Free the vehicle
+        if booking.vehicle and booking.vehicle.status != 'Available':
             booking.vehicle.status = 'Available'
             booking.vehicle.save(update_fields=['status'])
-        booking.status = 'Completed'
-        booking.save(update_fields=['status'])
+            changed = True
 
+        # Mark booking as Completed (bypass save() method to avoid conflict)
+        if booking.status != 'Completed':
+            Booking.objects.filter(pk=booking.pk).update(status='Completed')
+            changed = True
 
+        if changed:
+            updated += 1
+            print(f"AUTO-FREED: Booking #{booking.id} | Vehicle: {booking.vehicle} → AVAILABLE")
+
+    if updated:
+        print(f"UPDATE_EXPIRED_BOOKINGS: {updated} booking(s) auto-completed at {now}")
 # ======================
 # AUTH & NAVIGATION
 # ======================
@@ -110,14 +122,22 @@ def request_vehicle(request, vehicle_id):
             booking.employee = request.user
             booking.vehicle = vehicle
             booking.status = 'Pending'
+
+            # AUTO SET PRIORITY BASED ON ROLE
+            if request.user.role == 'HR':
+                booking.priority = 1        # Highest
+            elif request.user.role == 'Manager':
+                booking.priority = 2        # High
+            else:  # Employee
+                booking.priority = 4        # Low
+
             booking.save()
-            messages.success(request, f'Booking request for {vehicle.model} submitted!')
+            messages.success(request, f'Booking request submitted! Priority auto-set to {booking.priority}')
             return redirect('user_bookings')
     else:
         form = BookingForm()
     
     return render(request, 'user/request_form.html', {'form': form, 'vehicle': vehicle})
-
 
 # ======================
 # ADMIN VIEWS
@@ -159,7 +179,6 @@ def admin_bookings(request):
         'now': timezone.now()
     })
 
-
 @login_required
 def admin_vehicles(request):
     update_expired_bookings()
@@ -167,8 +186,13 @@ def admin_vehicles(request):
         return redirect('dashboard')
     
     vehicles = Vehicle.objects.select_related('assigned_driver').all().order_by('-id')
-    available_drivers = Driver.objects.filter(status='Active', assigned_vehicle__isnull=True).order_by('name')
     
+    # NOW THIS WORKS PERFECTLY
+    available_drivers = Driver.objects.filter(
+        status='Active',
+        assigned_vehicle__isnull=True
+    ).order_by('name')
+
     for v in vehicles:
         v.is_in_use = v.bookings.filter(status='Approved').exists()
         v.pending_bookings_count = v.bookings.filter(status='Pending').count()
@@ -176,26 +200,35 @@ def admin_vehicles(request):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                vehicle = Vehicle(
+                vehicle = Vehicle.objects.create(
                     model=request.POST['model'].strip(),
-                    vehicle_number=request.POST['vehicle_number'].strip(),
+                    vehicle_number=request.POST['vehicle_number'].strip().upper(),
                     capacity=int(request.POST['capacity']),
                     status='Available'
                 )
-                vehicle.save()
 
                 driver_id = request.POST.get('assigned_driver')
                 if driver_id:
-                    driver = get_object_or_404(Driver, id=driver_id, assigned_vehicle__isnull=True)
-                    vehicle.assigned_driver = driver
-                    vehicle.save()
+                    driver = get_object_or_404(
+                        Driver,
+                        id=driver_id,
+                        status='Active',
+                        assigned_vehicle__isnull=True
+                    )
+                    driver.assigned_vehicle = vehicle
+                    driver.save()
+                    messages.success(request, f'Vehicle added and assigned to {driver.name}')
+                else:
+                    messages.success(request, 'Vehicle added successfully')
 
-                messages.success(request, f'Vehicle "{vehicle.model}" added.')
         except Exception as e:
             messages.error(request, f'Error: {e}')
         return redirect('admin_vehicles')
     
-    return render(request, 'admin/vehicles.html', {'vehicles': vehicles, 'drivers': available_drivers})
+    return render(request, 'admin/vehicles.html', {
+        'vehicles': vehicles,
+        'drivers': available_drivers
+    })
 
 
 @login_required
@@ -205,35 +238,77 @@ def edit_vehicle(request, pk):
         return redirect('dashboard')
     
     vehicle = get_object_or_404(Vehicle, pk=pk)
-    available_drivers = Driver.objects.filter(status='Active', assigned_vehicle__isnull=True).exclude(id=vehicle.assigned_driver_id if vehicle.assigned_driver else None)
-    
+
+    # Get current driver safely (reverse relation)
+    try:
+        current_driver = vehicle.assigned_driver  # This works because of related_name='assigned_driver'
+    except Driver.DoesNotExist:
+        current_driver = None
+
+    # Available drivers: Active + Not assigned to any vehicle + Include current driver
+    available_drivers = Driver.objects.filter(
+        status='Active',
+        assigned_vehicle__isnull=True
+    )
+    if current_driver:
+        available_drivers = available_drivers | Driver.objects.filter(id=current_driver.id)
+    available_drivers = available_drivers.distinct().order_by('name')
+
     if request.method == 'POST':
         try:
             with transaction.atomic():
+                # Update basic fields
                 vehicle.model = request.POST['model'].strip()
-                vehicle.vehicle_number = request.POST['vehicle_number'].strip()
+                vehicle.vehicle_number = request.POST['vehicle_number'].strip().upper()
                 vehicle.capacity = int(request.POST['capacity'])
+
+                # Update status safely
                 new_status = request.POST.get('status')
                 if new_status in dict(Vehicle.STATUS_CHOICES):
+                    if new_status == 'Available' and vehicle.bookings.filter(status='Approved').exists():
+                        messages.error(request, 'Cannot set to Available: Vehicle is currently in use.')
+                        return redirect('admin_vehicles')
                     vehicle.status = new_status
-                
+
+                # Handle driver assignment
                 driver_id = request.POST.get('assigned_driver')
-                if driver_id:
-                    driver = get_object_or_404(Driver, id=driver_id, assigned_vehicle__isnull=True)
-                    if vehicle.assigned_driver:
-                        vehicle.assigned_driver = None
-                    vehicle.assigned_driver = driver
-                else:
-                    vehicle.assigned_driver = None
                 
+                if driver_id:
+                    driver_id = int(driver_id)
+                    new_driver = get_object_or_404(Driver, id=driver_id, status='Active')
+                    
+                    # Prevent double assignment
+                    if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
+                        messages.error(request, f'Driver {new_driver.name} is already assigned to another vehicle.')
+                        return redirect('admin_vehicles')
+                    
+                    # Unassign old driver if different
+                    if current_driver and current_driver != new_driver:
+                        current_driver.assigned_vehicle = None
+                        current_driver.save()
+                    
+                    # Assign new driver
+                    new_driver.assigned_vehicle = vehicle
+                    new_driver.save()
+                    
+                else:
+                    # No driver selected → Unassign current
+                    if current_driver:
+                        current_driver.assigned_vehicle = None
+                        current_driver.save()
+
                 vehicle.save()
-            messages.success(request, f'Vehicle "{vehicle.model}" updated.')
+                messages.success(request, f'Vehicle "{vehicle.model}" updated successfully.')
+                
+        except ValueError:
+            messages.error(request, 'Invalid capacity value.')
         except Exception as e:
-            messages.error(request, f'Update failed: {e}')
-    
-    return redirect('admin_vehicles')
+            messages.error(request, f'Update failed: {str(e)}')
+        
+        return redirect('admin_vehicles')
 
-
+    # For GET → just redirect to main page (modal will use context from admin_vehicles)
+    return redirect('admin_vehicles') # GET requests handled in admin_vehicles
 @login_required
 def update_vehicle_status(request, pk):
     update_expired_bookings()
@@ -256,21 +331,43 @@ def update_vehicle_status(request, pk):
 @login_required
 def delete_vehicle(request, pk):
     update_expired_bookings()
-    if not (request.is_superuser or request.user.role == 'Admin'):
-        return redirect('dashboard')
+    
+    # CORRECT: request.user.is_superuser (NOT request.is_superuser)
+    if not (request.user.is_superuser or request.user.role == 'Admin'):
+        messages.error(request, "You don't have permission to delete vehicles.")
+        return redirect('admin_vehicles')
     
     vehicle = get_object_or_404(Vehicle, pk=pk)
+    
     if request.method == 'POST':
-        with transaction.atomic():
-            pending_count = vehicle.bookings.filter(status='Pending').count()
-            vehicle.bookings.filter(status='Pending').update(status='Cancelled')
-            if vehicle.assigned_driver:
-                vehicle.assigned_driver = None
-            vehicle_name = f"{vehicle.model} ({vehicle.vehicle_number})"
-            vehicle.delete()
-        messages.success(request, f'Vehicle "{vehicle_name}" deleted. {pending_count} pending booking(s) cancelled.')
+        try:
+            with transaction.atomic():
+                vehicle_name = f"{vehicle.model} ({vehicle.vehicle_number})"
+                
+                # Unassign driver if exists
+                if hasattr(vehicle, 'assigned_driver') and vehicle.assigned_driver:
+                    driver = vehicle.assigned_driver
+                    driver.assigned_vehicle = None
+                    driver.save()
+                
+                # Cancel pending bookings
+                pending_count = vehicle.bookings.filter(status='Pending').count()
+                vehicle.bookings.filter(status='Pending').update(status='Cancelled')
+                
+                vehicle.delete()
+                
+                messages.success(
+                    request,
+                    f'Vehicle "{vehicle_name}" deleted successfully. '
+                    f'{pending_count} pending booking(s) cancelled.'
+                )
+        except Exception as e:
+            messages.error(request, f'Error deleting vehicle: {e}')
+        
+        return redirect('admin_vehicles')
+    
+    # For GET request (if accessed directly)
     return redirect('admin_vehicles')
-
 
 @login_required
 def admin_drivers(request):

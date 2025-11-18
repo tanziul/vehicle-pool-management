@@ -22,6 +22,7 @@ class Vehicle(models.Model):
     STATUS_CHOICES = [
         ('Available', 'Available'),
         ('Booked', 'Booked'),
+        
         ('Maintenance', 'Maintenance'),
     ]
     model = models.CharField(max_length=100)
@@ -29,19 +30,8 @@ class Vehicle(models.Model):
     capacity = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')
 
-    assigned_driver = models.OneToOneField(
-        'Driver',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='driver_assigned_vehicle'
-    )
-
     def __str__(self):
         return f"{self.model} ({self.vehicle_number})"
-
-    class Meta:
-        verbose_name_plural = "Vehicles"
 
 
 class Driver(models.Model):
@@ -55,20 +45,15 @@ class Driver(models.Model):
     )
 
     assigned_vehicle = models.OneToOneField(
-        'Vehicle',
+        Vehicle,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='vehicle_assigned_driver'
+        related_name='assigned_driver'   # Now Vehicle → Driver works!
     )
 
     def __str__(self):
         return self.name
-
-    class Meta:
-        verbose_name_plural = "Drivers"
-
-
 class Booking(models.Model):
     PRIORITY_CHOICES = [(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')]
 
@@ -86,18 +71,34 @@ class Booking(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def save(self, *args, **kwargs):
-        if self.pk and self.status == 'Approved' and self.vehicle:
-            if self.vehicle.status != 'Booked':
-                self.vehicle.status = 'Booked'
-                self.vehicle.save(update_fields=['status'])
-        super().save(*args, **kwargs)
-
     def __str__(self):
         return f"{self.employee} → {self.vehicle}"
 
     class Meta:
         ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        """
+        ONLY set vehicle to 'Booked' when status CHANGES TO 'Approved'
+        Never touch vehicle when status becomes 'Completed'
+        """
+        # Detect if this save is changing status TO 'Approved'
+        if self.pk:
+            try:
+                old = Booking.objects.get(pk=self.pk)
+                becoming_approved = (old.status != 'Approved' and self.status == 'Approved')
+            except Booking.DoesNotExist:
+                becoming_approved = (self.status == 'Approved')
+        else:
+            becoming_approved = (self.status == 'Approved')
+
+        # Only force vehicle to Booked when APPROVING
+        if becoming_approved and self.vehicle:
+            if self.vehicle.status != 'Booked':
+                self.vehicle.status = 'Booked'
+                self.vehicle.save(update_fields=['status'])
+
+        super().save(*args, **kwargs)
 
 
 class TripReport(models.Model):
@@ -139,11 +140,3 @@ def _release_vehicle_after_delay(booking_id):
     except Booking.DoesNotExist:
         pass
 
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-@receiver(post_save, sender=Booking)
-def schedule_vehicle_auto_release(sender, instance, created, **kwargs):
-    if not created and instance.status == 'Approved' and instance.vehicle:
-        _release_vehicle_after_delay(instance.id)
