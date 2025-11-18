@@ -80,14 +80,16 @@ def dashboard(request):
 # ======================
 # USER VIEWS
 # ======================
+
 @login_required
 def user_dashboard(request):
     update_expired_bookings()
     if request.user.role not in ['Employee', 'Manager', 'HR']:
         return redirect('dashboard')
-    vehicles = Vehicle.objects.select_related('assigned_driver').all()
+    
+    
+    vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
     return render(request, 'user/dashboard.html', {'vehicles': vehicles})
-
 
 @login_required
 def user_bookings(request):
@@ -113,7 +115,7 @@ def request_vehicle(request, vehicle_id):
     if request.user.role not in ['Employee', 'Manager', 'HR']:
         return redirect('dashboard')
     
-    vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')  # Only truly Available
     
     if request.method == 'POST':
         form = BookingForm(request.POST)
@@ -123,22 +125,24 @@ def request_vehicle(request, vehicle_id):
             booking.vehicle = vehicle
             booking.status = 'Pending'
 
-            # AUTO SET PRIORITY BASED ON ROLE
+            
             if request.user.role == 'HR':
-                booking.priority = 1        # Highest
+                booking.priority = 1
             elif request.user.role == 'Manager':
-                booking.priority = 2        # High
-            else:  # Employee
-                booking.priority = 4        # Low
+                booking.priority = 2
+            else:
+                booking.priority = 4
 
             booking.save()
-            messages.success(request, f'Booking request submitted! Priority auto-set to {booking.priority}')
+            vehicle.status = 'Reserved'
+            vehicle.save()
+
+            messages.success(request, f"Request submitted! Vehicle is now reserved for approval.")
             return redirect('user_bookings')
     else:
         form = BookingForm()
     
     return render(request, 'user/request_form.html', {'form': form, 'vehicle': vehicle})
-
 # ======================
 # ADMIN VIEWS
 # ======================
@@ -187,7 +191,7 @@ def admin_vehicles(request):
     
     vehicles = Vehicle.objects.select_related('assigned_driver').all().order_by('-id')
     
-    # NOW THIS WORKS PERFECTLY
+   
     available_drivers = Driver.objects.filter(
         status='Active',
         assigned_vehicle__isnull=True
@@ -239,13 +243,10 @@ def edit_vehicle(request, pk):
     
     vehicle = get_object_or_404(Vehicle, pk=pk)
 
-    # Get current driver safely (reverse relation)
     try:
-        current_driver = vehicle.assigned_driver  # This works because of related_name='assigned_driver'
+        current_driver = vehicle.assigned_driver  
     except Driver.DoesNotExist:
         current_driver = None
-
-    # Available drivers: Active + Not assigned to any vehicle + Include current driver
     available_drivers = Driver.objects.filter(
         status='Active',
         assigned_vehicle__isnull=True
@@ -257,42 +258,45 @@ def edit_vehicle(request, pk):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # Update basic fields
+               
                 vehicle.model = request.POST['model'].strip()
                 vehicle.vehicle_number = request.POST['vehicle_number'].strip().upper()
                 vehicle.capacity = int(request.POST['capacity'])
 
-                # Update status safely
+                
+ 
+                # In edit_vehicle POST
                 new_status = request.POST.get('status')
-                if new_status in dict(Vehicle.STATUS_CHOICES):
-                    if new_status == 'Available' and vehicle.bookings.filter(status='Approved').exists():
-                        messages.error(request, 'Cannot set to Available: Vehicle is currently in use.')
-                        return redirect('admin_vehicles')
-                    vehicle.status = new_status
+                if new_status in ['Available', 'Maintenance']:
+                   if new_status == 'Available' and vehicle.bookings.filter(status='Approved').exists():
+                      messages.error(request, "Cannot set to Available — vehicle is in use!")
+                else:
+                   vehicle.status = new_status
+                   vehicle.save()
 
-                # Handle driver assignment
+              
                 driver_id = request.POST.get('assigned_driver')
                 
                 if driver_id:
                     driver_id = int(driver_id)
                     new_driver = get_object_or_404(Driver, id=driver_id, status='Active')
                     
-                    # Prevent double assignment
+                    
                     if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
                         messages.error(request, f'Driver {new_driver.name} is already assigned to another vehicle.')
                         return redirect('admin_vehicles')
                     
-                    # Unassign old driver if different
+                    
                     if current_driver and current_driver != new_driver:
                         current_driver.assigned_vehicle = None
                         current_driver.save()
                     
-                    # Assign new driver
+                   
                     new_driver.assigned_vehicle = vehicle
                     new_driver.save()
                     
                 else:
-                    # No driver selected → Unassign current
+                    
                     if current_driver:
                         current_driver.assigned_vehicle = None
                         current_driver.save()
@@ -307,8 +311,8 @@ def edit_vehicle(request, pk):
         
         return redirect('admin_vehicles')
 
-    # For GET → just redirect to main page (modal will use context from admin_vehicles)
-    return redirect('admin_vehicles') # GET requests handled in admin_vehicles
+    
+    return redirect('admin_vehicles') 
 @login_required
 def update_vehicle_status(request, pk):
     update_expired_bookings()
@@ -332,7 +336,7 @@ def update_vehicle_status(request, pk):
 def delete_vehicle(request, pk):
     update_expired_bookings()
     
-    # CORRECT: request.user.is_superuser (NOT request.is_superuser)
+   
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         messages.error(request, "You don't have permission to delete vehicles.")
         return redirect('admin_vehicles')
@@ -344,13 +348,13 @@ def delete_vehicle(request, pk):
             with transaction.atomic():
                 vehicle_name = f"{vehicle.model} ({vehicle.vehicle_number})"
                 
-                # Unassign driver if exists
+                
                 if hasattr(vehicle, 'assigned_driver') and vehicle.assigned_driver:
                     driver = vehicle.assigned_driver
                     driver.assigned_vehicle = None
                     driver.save()
                 
-                # Cancel pending bookings
+                
                 pending_count = vehicle.bookings.filter(status='Pending').count()
                 vehicle.bookings.filter(status='Pending').update(status='Cancelled')
                 
@@ -366,7 +370,7 @@ def delete_vehicle(request, pk):
         
         return redirect('admin_vehicles')
     
-    # For GET request (if accessed directly)
+    
     return redirect('admin_vehicles')
 
 @login_required
@@ -507,7 +511,6 @@ def delete_user(request, pk):
         messages.success(request, f'User "{username}" deleted.')
     return redirect('admin_users')
 
-
 @login_required
 def approve_booking(request, pk):
     update_expired_bookings()
@@ -516,9 +519,6 @@ def approve_booking(request, pk):
     booking = get_object_or_404(Booking, pk=pk, status='Pending')
     if request.method == 'POST':
         vehicle = booking.vehicle
-        if not vehicle or vehicle.status != 'Available':
-            messages.error(request, 'Vehicle no longer available.')
-            return redirect('admin_bookings')
         with transaction.atomic():
             booking.status = 'Approved'
             booking.approved_by = request.user
@@ -526,21 +526,21 @@ def approve_booking(request, pk):
             booking.save()
             vehicle.status = 'Booked'
             vehicle.save()
-        messages.success(request, f'Approved! {vehicle.model} assigned to {booking.employee.get_full_name()}')
+        messages.success(request, f'Approved! {vehicle.model} assigned.')
     return redirect('admin_bookings')
-
 
 @login_required
 def reject_booking(request, pk):
     update_expired_bookings()
-    if not (request.user.is_superuser or request.user.role == 'Admin'):
-        return redirect('dashboard')
     booking = get_object_or_404(Booking, pk=pk, status='Pending')
-    booking.status = 'Rejected'
-    booking.save()
-    messages.success(request, f'Booking #{booking.id} rejected.')
+    if request.method == 'POST':
+        with transaction.atomic():
+            booking.status = 'Rejected'
+            booking.save()
+            booking.vehicle.status = 'Available'
+            booking.vehicle.save()
+        messages.success(request, 'Booking rejected. Vehicle is now available.')
     return redirect('admin_bookings')
-
 
 @login_required
 def complete_trip(request, pk):

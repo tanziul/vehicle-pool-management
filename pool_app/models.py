@@ -21,8 +21,8 @@ class User(AbstractUser):
 class Vehicle(models.Model):
     STATUS_CHOICES = [
         ('Available', 'Available'),
+        ('Reserved', 'Reserved'),        
         ('Booked', 'Booked'),
-        
         ('Maintenance', 'Maintenance'),
     ]
     model = models.CharField(max_length=100)
