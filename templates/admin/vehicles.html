@@ -31,55 +31,61 @@
                     <td><strong>{{ v.model }}</strong></td>
                     <td>{{ v.vehicle_number }}</td>
                     <td>{{ v.capacity }}</td>
+
+                    <!-- DRIVER COLUMN — FINAL & PERFECT -->
                     <td>
-                        {% if v.assigned_driver %}
-                            <span class="badge bg-success">{{ v.assigned_driver.name }}</span>
+                        {% if v.status == 'Out of Service' and v.last_assigned_driver %}
+                            <span class="badge bg-secondary text-decoration-line-through">
+                                {{ v.last_assigned_driver.name }} <small>(Previously Assigned)</small>
+                            </span>
+                            <br><small class="text-muted">Vehicle is out of service</small>
+
+                        {% elif v.assigned_driver %}
+                            {% if v.assigned_driver.status == 'Active' %}
+                                <span class="badge bg-success">{{ v.assigned_driver.name }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary text-decoration-line-through">
+                                    {{ v.assigned_driver.name }} <small>(Inactive)</small>
+                                </span>
+                                <br><small class="text-muted">Driver has left the company</small>
+                            {% endif %}
+
                         {% else %}
-                            <em class="text-muted">—</em>
+                            <em class="text-muted">No driver assigned</em>
                         {% endif %}
                     </td>
 
-                    <!-- STATUS COLUMN — SHOWS Reserved, Booked, Maintenance CORRECTLY -->
+                    <!-- STATUS BADGE -->
                     <td>
-                        {% if v.status == 'Available' %}
-                            <span class="badge bg-success fs-6">Available</span>
-                        {% elif v.status == 'Reserved' %}
-                            <span class="badge bg-info fs-6">Reserved</span>
-                            <small class="d-block text-info">Pending approval</small>
-                        {% elif v.status == 'Booked' %}
-                            <span class="badge bg-danger fs-6">Booked</span>
-                            <small class="d-block text-danger">In use</small>
+                        {% if v.status == 'Out of Service' %}
+                            <span class="badge bg-dark">Out of Service</span>
                         {% elif v.status == 'Maintenance' %}
-                            <span class="badge bg-warning fs-6">Maintenance</span>
+                            <span class="badge bg-warning text-dark">Maintenance</span>
+                        {% elif v.status == 'Reserved' %}
+                            <span class="badge bg-info">Reserved</span>
+                        {% elif v.status == 'Booked' %}
+                            <span class="badge bg-danger">Booked</span>
+                        {% else %}
+                            <span class="badge bg-success">Available</span>
                         {% endif %}
                     </td>
 
-                    <!-- ACTIONS COLUMN — DELETE DISABLED IF HAS BOOKINGS -->
+                    <!-- EDIT BUTTON -->
                     <td>
                         <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editVehicleModal{{ v.id }}">
                             Edit
                         </button>
-
-                        {% if v.bookings.exists %}
-                            <button class="btn btn-sm btn-secondary" disabled title="Cannot delete: Vehicle has booking history">
-                                Delete
-                            </button>
-                        {% else %}
-                            <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteVehicleModal{{ v.id }}">
-                                Delete
-                            </button>
-                        {% endif %}
                     </td>
                 </tr>
 
-                <!-- EDIT MODAL — ONLY Available & Maintenance allowed -->
+                <!-- EDIT MODAL — FINAL & BULLETPROOF -->
                 <div class="modal fade" id="editVehicleModal{{ v.id }}" tabindex="-1">
                     <div class="modal-dialog modal-lg">
                         <form method="post" action="{% url 'edit_vehicle' v.id %}">
                             {% csrf_token %}
                             <div class="modal-content">
                                 <div class="modal-header bg-warning text-dark">
-                                    <h5 class="modal-title">Edit {{ v.model }}</h5>
+                                    <h5 class="modal-title">Edit {{ v.model }} ({{ v.vehicle_number }})</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
@@ -101,21 +107,28 @@
                                             <select name="status" class="form-select">
                                                 <option value="Available" {% if v.status == 'Available' %}selected{% endif %}>Available</option>
                                                 <option value="Maintenance" {% if v.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+                                                <option value="Out of Service" {% if v.status == 'Out of Service' %}selected{% endif %}>Out of Service</option>
                                             </select>
                                             <small class="text-muted">Booked/Reserved status is system-controlled</small>
                                         </div>
-                                        <div class="col-md-12">
-                                            <label class="form-label">Assign Driver</label>
-                                            <select name="assigned_driver" class="form-select">
-                                                <option value="">— No Driver —</option>
-                                                {% for d in drivers %}
-                                                <option value="{{ d.id }}" {% if d == v.assigned_driver %}selected{% endif %}>
-                                                    {{ d.name }} ({{ d.license_no }})
-                                                </option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
+
+                                        <!-- DRIVER SELECT — FINAL & SAFE -->
+<select name="assigned_driver" class="form-select" required>
+    {% if v.assigned_driver %}
+        <option value="{{ v.assigned_driver.id }}" selected>
+            Keep Current → {{ v.assigned_driver.name }}
+        </option>
+    {% else %}
+        <option value="" selected>No Driver Assigned</option>
+    {% endif %}
+    <option value="remove">--- Remove Driver ---</option>
+    {% for d in drivers %}
+        <option value="{{ d.id }}">
+            {{ d.name }} ({{ d.license_no }})
+            {% if d.assigned_vehicle and d.assigned_vehicle != v %} [Busy]{% endif %}
+        </option>
+    {% endfor %}
+</select>                     
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -125,46 +138,12 @@
                         </form>
                     </div>
                 </div>
-
-                <!-- DELETE MODAL -->
-                <div class="modal fade" id="deleteVehicleModal{{ v.id }}" tabindex="-1">
-                    <div class="modal-dialog">
-                        <form method="post" action="{% url 'delete_vehicle' v.id %}">
-                            {% csrf_token %}
-                            <div class="modal-content">
-                                <div class="modal-header bg-danger text-white">
-                                    <h5 class="modal-title">Delete Vehicle?</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>Are you sure you want to <strong>delete</strong>:</p>
-                                    <ul class="list-unstyled mb-0">
-                                        <li><strong>Model:</strong> {{ v.model }}</li>
-                                        <li><strong>Plate:</strong> {{ v.vehicle_number }}</li>
-                                        <li><strong>Driver:</strong> {{ v.assigned_driver.name|default:"None" }}</li>
-                                    </ul>
-                                    {% if v.bookings.exists %}
-                                    <div class="alert alert-danger mt-3">
-                                        This vehicle has booking history and cannot be deleted.
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                    {% if not v.bookings.exists %}
-                                    <button type="submit" class="btn btn-danger">Yes, Delete</button>
-                                    {% endif %}
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- ADD VEHICLE MODAL (unchanged) -->
+    <!-- ADD VEHICLE MODAL — CLEAN -->
     <div class="modal fade" id="addVehicleModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <form method="post" action="{% url 'admin_vehicles' %}">
@@ -193,9 +172,9 @@
                                 <select name="assigned_driver" class="form-select">
                                     <option value="">— No Driver —</option>
                                     {% for d in drivers %}
-                                    <option value="{{ d.id }}">{{ d.name }} ({{ d.license_no }})</option>
+                                        <option value="{{ d.id }}">{{ d.name }} ({{ d.license_no }})</option>
                                     {% empty %}
-                                    <option disabled>No available drivers</option>
+                                        <option disabled>No available drivers</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -211,9 +190,8 @@
     </div>
 </div>
 
-<!-- Optional: Auto-refresh every 30 seconds -->
 <script>
-    
+    // Auto refresh every 30 seconds
     setTimeout(() => location.reload(), 30000);
 </script>
 {% endblock %}

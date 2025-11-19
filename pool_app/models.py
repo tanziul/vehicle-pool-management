@@ -4,6 +4,12 @@ from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 import threading
 
+# pool_app/models.py
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
+import threading
+
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -24,11 +30,22 @@ class Vehicle(models.Model):
         ('Reserved', 'Reserved'),        
         ('Booked', 'Booked'),
         ('Maintenance', 'Maintenance'),
+        ('Out of Service', 'Out of Service'),
     ]
     model = models.CharField(max_length=100)
     vehicle_number = models.CharField(max_length=20, unique=True)
     capacity = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')
+
+    # FIXED: Use string 'Driver' to avoid circular import
+    last_assigned_driver = models.ForeignKey(
+        'Driver',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='previously_assigned_vehicles',
+        help_text="Shows previous driver when vehicle is Out of Service"
+    )
 
     def __str__(self):
         return f"{self.model} ({self.vehicle_number})"
@@ -44,16 +61,19 @@ class Driver(models.Model):
         default='Active'
     )
 
+    # FIXED: Use string 'Vehicle' to break circular import
     assigned_vehicle = models.OneToOneField(
-        Vehicle,
+        'Vehicle',  # ← THIS WAS THE PROBLEM
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='assigned_driver'   # Now Vehicle → Driver works!
+        related_name='assigned_driver'
     )
 
     def __str__(self):
         return self.name
+    
+    
 class Booking(models.Model):
     PRIORITY_CHOICES = [(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')]
 
@@ -82,7 +102,7 @@ class Booking(models.Model):
         ONLY set vehicle to 'Booked' when status CHANGES TO 'Approved'
         Never touch vehicle when status becomes 'Completed'
         """
-        # Detect if this save is changing status TO 'Approved'
+       
         if self.pk:
             try:
                 old = Booking.objects.get(pk=self.pk)
@@ -92,7 +112,7 @@ class Booking(models.Model):
         else:
             becoming_approved = (self.status == 'Approved')
 
-        # Only force vehicle to Booked when APPROVING
+       
         if becoming_approved and self.vehicle:
             if self.vehicle.status != 'Booked':
                 self.vehicle.status = 'Booked'

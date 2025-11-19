@@ -20,11 +20,11 @@ urlpatterns = [
     path('admin/vehicles/', views.admin_vehicles, name='admin_vehicles'),
     path('admin/vehicles/update-status/<int:pk>/', views.update_vehicle_status, name='update_vehicle_status'),
     path('admin/edit-vehicle/<int:pk>/', views.edit_vehicle, name='edit_vehicle'),
-    path('admin/vehicles/delete/<int:pk>/', views.delete_vehicle, name='delete_vehicle'),
+    
 
     # DRIVERS — THESE TWO LINES WERE WRONG BEFORE
     path('admin/drivers/', views.admin_drivers, name='admin_drivers'),
-    path('admin/drivers/delete/<int:driver_id>/', views.delete_driver, name='delete_driver'),   # ← driver_id + correct order
+    
 
     path('admin/drivers/add/', views.add_driver, name='add_driver'),
     path('admin/drivers/edit/<int:pk>/', views.edit_driver, name='edit_driver'),
@@ -33,7 +33,7 @@ urlpatterns = [
     path('admin/users/', views.admin_users, name='admin_users'),
     path('admin/add-user/', views.add_user, name='add_user'),
     path('admin/edit-user/<int:pk>/', views.edit_user, name='edit_user'),
-    path('admin/delete-user/<int:pk>/', views.delete_user, name='delete_user'),
+    
 
     # BOOKINGS
     path('admin/approve-booking/<int:pk>/', views.approve_booking, name='approve_booking'),

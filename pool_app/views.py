@@ -1,10 +1,11 @@
-# pool_app/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
+
+
 from .models import User, Driver, Vehicle, Booking, TripReport
 from .forms import BookingForm, TripReportForm
 
@@ -240,79 +241,74 @@ def edit_vehicle(request, pk):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
-    
-    vehicle = get_object_or_404(Vehicle, pk=pk)
 
-    try:
-        current_driver = vehicle.assigned_driver  
-    except Driver.DoesNotExist:
-        current_driver = None
-    available_drivers = Driver.objects.filter(
-        status='Active',
-        assigned_vehicle__isnull=True
-    )
-    if current_driver:
-        available_drivers = available_drivers | Driver.objects.filter(id=current_driver.id)
-    available_drivers = available_drivers.distinct().order_by('name')
+    vehicle = get_object_or_404(Vehicle, pk=pk)
 
     if request.method == 'POST':
         try:
             with transaction.atomic():
-               
+                # Update basic fields
                 vehicle.model = request.POST['model'].strip()
                 vehicle.vehicle_number = request.POST['vehicle_number'].strip().upper()
                 vehicle.capacity = int(request.POST['capacity'])
+                new_status = request.POST['status']
+                driver_choice = request.POST.get('assigned_driver', '').strip()
 
-                
- 
-                # In edit_vehicle POST
-                new_status = request.POST.get('status')
-                if new_status in ['Available', 'Maintenance']:
-                   if new_status == 'Available' and vehicle.bookings.filter(status='Approved').exists():
-                      messages.error(request, "Cannot set to Available — vehicle is in use!")
-                else:
-                   vehicle.status = new_status
-                   vehicle.save()
+                current_driver = vehicle.assigned_driver  # Can be None — safe
 
-              
-                driver_id = request.POST.get('assigned_driver')
-                
-                if driver_id:
-                    driver_id = int(driver_id)
-                    new_driver = get_object_or_404(Driver, id=driver_id, status='Active')
-                    
-                    
+                # 1. GOING TO "Out of Service" → free driver + save history
+                if new_status == 'Out of Service':
+                    if current_driver:
+                        vehicle.last_assigned_driver = current_driver
+                        current_driver.assigned_vehicle = None
+                        current_driver.save(update_fields=['assigned_vehicle'])
+
+                # 2. DRIVER ASSIGNMENT LOGIC — FINAL & SAFE
+                if driver_choice and driver_choice != 'remove':
+                    # User selected a real driver ID (e.g. "5")
+                    new_driver = get_object_or_404(Driver, id=int(driver_choice), status='Active')
+
+                    # Prevent assigning a busy driver
                     if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
-                        messages.error(request, f'Driver {new_driver.name} is already assigned to another vehicle.')
+                        messages.error(request, f"{new_driver.name} is already assigned to another vehicle!")
                         return redirect('admin_vehicles')
-                    
-                    
+
+                    # Free current driver if exists and different
                     if current_driver and current_driver != new_driver:
                         current_driver.assigned_vehicle = None
-                        current_driver.save()
-                    
-                   
+                        current_driver.save(update_fields=['assigned_vehicle'])
+
+                    # Assign the new driver
                     new_driver.assigned_vehicle = vehicle
-                    new_driver.save()
-                    
-                else:
-                    
+                    new_driver.save(update_fields=['assigned_vehicle'])
+
+                elif driver_choice == 'remove':
+                    # Explicitly remove driver
                     if current_driver:
                         current_driver.assigned_vehicle = None
-                        current_driver.save()
+                        current_driver.save(update_fields=['assigned_vehicle'])
 
+                # If driver_choice is empty or same as current → DO NOTHING (perfectly safe)
+
+                # Finally update status and save vehicle
+                vehicle.status = new_status
                 vehicle.save()
-                messages.success(request, f'Vehicle "{vehicle.model}" updated successfully.')
-                
-        except ValueError:
-            messages.error(request, 'Invalid capacity value.')
+
+                messages.success(request, f"Vehicle updated → {new_status}")
+                return redirect('admin_vehicles')
+
         except Exception as e:
-            messages.error(request, f'Update failed: {str(e)}')
-        
+            messages.error(request, f"Error updating vehicle: {str(e)}")
+            import traceback
+            traceback.print_exc()  # This will show you the real error in terminal
+
         return redirect('admin_vehicles')
 
-    
-    return redirect('admin_vehicles') 
+    # If GET request → just redirect (modal handles display)
+    return redirect('admin_vehicles')
+
+
+
 @login_required
 def update_vehicle_status(request, pk):
     update_expired_bookings()
@@ -331,47 +327,6 @@ def update_vehicle_status(request, pk):
                 messages.success(request, f'Status: {new_status}')
     return redirect('admin_vehicles')
 
-
-@login_required
-def delete_vehicle(request, pk):
-    update_expired_bookings()
-    
-   
-    if not (request.user.is_superuser or request.user.role == 'Admin'):
-        messages.error(request, "You don't have permission to delete vehicles.")
-        return redirect('admin_vehicles')
-    
-    vehicle = get_object_or_404(Vehicle, pk=pk)
-    
-    if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                vehicle_name = f"{vehicle.model} ({vehicle.vehicle_number})"
-                
-                
-                if hasattr(vehicle, 'assigned_driver') and vehicle.assigned_driver:
-                    driver = vehicle.assigned_driver
-                    driver.assigned_vehicle = None
-                    driver.save()
-                
-                
-                pending_count = vehicle.bookings.filter(status='Pending').count()
-                vehicle.bookings.filter(status='Pending').update(status='Cancelled')
-                
-                vehicle.delete()
-                
-                messages.success(
-                    request,
-                    f'Vehicle "{vehicle_name}" deleted successfully. '
-                    f'{pending_count} pending booking(s) cancelled.'
-                )
-        except Exception as e:
-            messages.error(request, f'Error deleting vehicle: {e}')
-        
-        return redirect('admin_vehicles')
-    
-    
-    return redirect('admin_vehicles')
 
 @login_required
 def admin_drivers(request):
@@ -420,18 +375,6 @@ def edit_driver(request, pk):
     return redirect('admin_drivers')
 
 
-@login_required
-def delete_driver(request, driver_id):
-    update_expired_bookings()
-    driver = get_object_or_404(Driver, id=driver_id)
-    if request.method == "POST":
-        vehicle_info = f"{driver.assigned_vehicle.model} ({driver.assigned_vehicle.vehicle_number})" if driver.assigned_vehicle else None
-        driver.delete()
-        if vehicle_info:
-            messages.success(request, f"Driver deleted. Vehicle '{vehicle_info}' is now unassigned.")
-        else:
-            messages.success(request, "Driver deleted.")
-    return redirect('admin_drivers')
 
 
 @login_required
@@ -497,19 +440,6 @@ def edit_user(request, pk):
     return redirect('admin_users')
 
 
-@login_required
-def delete_user(request, pk):
-    update_expired_bookings()
-    if not (request.user.is_superuser or request.user.role == 'Admin'):
-        return redirect('dashboard')
-    user = get_object_or_404(User, pk=pk)
-    if user == request.user:
-        messages.error(request, 'You cannot delete your own account.')
-    else:
-        username = user.get_full_name() or user.username
-        user.delete()
-        messages.success(request, f'User "{username}" deleted.')
-    return redirect('admin_users')
 
 @login_required
 def approve_booking(request, pk):

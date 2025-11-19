@@ -50,15 +50,7 @@
                             <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editUser{{ u.id }}">
                                 Edit
                             </button>
-                            {% if u != request.user and u.role != 'Admin' %}
-                            <form method="post" action="{% url 'delete_user' u.id %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('Delete {{ u.username }}?')">
-                                    Delete
-                                </button>
-                            </form>
-                            {% endif %}
+                           
                         </div>
                     </td>
                 </tr>
