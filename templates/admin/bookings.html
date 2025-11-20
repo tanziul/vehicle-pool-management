@@ -3,6 +3,39 @@
 {% block content %}
 <div class="container-fluid">
     <h3>All Bookings</h3>
+
+    <!-- SEARCH + FILTER BAR — PROFESSIONAL & REUSABLE -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="get" class="d-flex">
+            <input 
+                type="text" 
+                name="q" 
+                class="form-control me-2" 
+                placeholder="Search by name, plate, username, email..." 
+                value="{{ request.GET.q|default:'' }}"
+                autocomplete="off"
+            >
+            <button type="submit" class="btn btn-outline-primary">
+                Search
+            </button>
+            {% if request.GET.q %}
+                <a href="?clear=1" class="btn btn-outline-secondary ms-2">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    {% if request.path == '/admin/vehicles/' %}
+    <div class="col-md-3">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <option value="Available" {% if request.GET.status == 'Available' %}selected{% endif %}>Available</option>
+            <option value="Booked" {% if request.GET.status == 'Booked' %}selected{% endif %}>Booked</option>
+            <option value="Maintenance" {% if request.GET.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+        </select>
+    </div>
+    {% endif %}
+</div>
     <div class="table-responsive">
         <table class="table table-hover align-middle">
             <thead class="table-light">
