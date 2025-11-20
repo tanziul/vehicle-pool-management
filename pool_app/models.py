@@ -3,8 +3,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 import threading
-
-# pool_app/models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
@@ -63,7 +61,7 @@ class Driver(models.Model):
 
     # FIXED: Use string 'Vehicle' to break circular import
     assigned_vehicle = models.OneToOneField(
-        'Vehicle',  # ← THIS WAS THE PROBLEM
+        'Vehicle',  
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -80,6 +78,7 @@ class Booking(models.Model):
     employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings_made')
     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, related_name='bookings')
     destination = models.CharField(max_length=200)
+     
     purpose = models.TextField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -119,6 +118,8 @@ class Booking(models.Model):
                 self.vehicle.save(update_fields=['status'])
 
         super().save(*args, **kwargs)
+
+    
 
 
 class TripReport(models.Model):

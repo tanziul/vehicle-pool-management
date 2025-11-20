@@ -5,6 +5,7 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h3 class="mb-0">Manage Vehicles</h3>
+        
         <div>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
                 Add Vehicle
@@ -32,7 +33,7 @@
                     <td>{{ v.vehicle_number }}</td>
                     <td>{{ v.capacity }}</td>
 
-                    <!-- DRIVER COLUMN — FINAL & PERFECT -->
+                    <!-- DRIVER COLUMN -->
                     <td>
                         {% if v.status == 'Out of Service' and v.last_assigned_driver %}
                             <span class="badge bg-secondary text-decoration-line-through">
@@ -47,7 +48,6 @@
                                 <span class="badge bg-secondary text-decoration-line-through">
                                     {{ v.assigned_driver.name }} <small>(Inactive)</small>
                                 </span>
-                                <br><small class="text-muted">Driver has left the company</small>
                             {% endif %}
 
                         {% else %}
@@ -78,7 +78,7 @@
                     </td>
                 </tr>
 
-                <!-- EDIT MODAL — FINAL & BULLETPROOF -->
+                <!-- EDIT MODAL -->
                 <div class="modal fade" id="editVehicleModal{{ v.id }}" tabindex="-1">
                     <div class="modal-dialog modal-lg">
                         <form method="post" action="{% url 'edit_vehicle' v.id %}">
@@ -112,23 +112,35 @@
                                             <small class="text-muted">Booked/Reserved status is system-controlled</small>
                                         </div>
 
-                                        <!-- DRIVER SELECT — FINAL & SAFE -->
-<select name="assigned_driver" class="form-select" required>
-    {% if v.assigned_driver %}
-        <option value="{{ v.assigned_driver.id }}" selected>
-            Keep Current → {{ v.assigned_driver.name }}
-        </option>
-    {% else %}
-        <option value="" selected>No Driver Assigned</option>
-    {% endif %}
-    <option value="remove">--- Remove Driver ---</option>
-    {% for d in drivers %}
-        <option value="{{ d.id }}">
-            {{ d.name }} ({{ d.license_no }})
-            {% if d.assigned_vehicle and d.assigned_vehicle != v %} [Busy]{% endif %}
-        </option>
-    {% endfor %}
-</select>                     
+                                        <!-- DRIVER SELECT — FINAL & PERFECT -->
+                                        <div class="col-md-12">
+                                            <label class="form-label">Assign Driver</label>
+                                            <select name="assigned_driver" class="form-select">
+                                                {% if v.assigned_driver %}
+                                                    <option value="{{ v.assigned_driver.id }}" selected>
+                                                        Keep Current → {{ v.assigned_driver.name }}
+                                                    </option>
+                                                {% else %}
+                                                    <option value="" selected>No Driver Assigned</option>
+                                                {% endif %}
+                                                <option value="remove">--- Remove Driver ---</option>
+                                                {% for d in drivers %}
+                                                    <option value="{{ d.id }}">
+                                                        {{ d.name }} ({{ d.license_no }})
+                                                        {% if d.assigned_vehicle and d.assigned_vehicle != v %} [Already Assigned]{% endif %}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <small class="text-success">
+                                                Current: 
+                                                {% if v.assigned_driver %}
+                                                    {{ v.assigned_driver.name }}
+                                                {% else %}
+                                                    <em>None</em>
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="modal-footer">
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -143,7 +155,7 @@
         </table>
     </div>
 
-    <!-- ADD VEHICLE MODAL — CLEAN -->
+    <!-- ADD VEHICLE MODAL — NOW ALLOWS NO DRIVER -->
     <div class="modal fade" id="addVehicleModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <form method="post" action="{% url 'admin_vehicles' %}">
@@ -168,15 +180,16 @@
                                 <input name="capacity" type="number" min="1" class="form-control" required>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Assign Driver</label>
+                                <label class="form-label">Assign Driver <small class="text-muted">(Optional)</small></label>
                                 <select name="assigned_driver" class="form-select">
-                                    <option value="">— No Driver —</option>
+                                    <option value="">— No Driver (Leave empty) —</option>
                                     {% for d in drivers %}
                                         <option value="{{ d.id }}">{{ d.name }} ({{ d.license_no }})</option>
                                     {% empty %}
-                                        <option disabled>No available drivers</option>
+                                        <option disabled>No active free drivers</option>
                                     {% endfor %}
                                 </select>
+                                <small class="text-muted">You can assign a driver later</small>
                             </div>
                         </div>
                     </div>
@@ -191,7 +204,6 @@
 </div>
 
 <script>
-    // Auto refresh every 30 seconds
     setTimeout(() => location.reload(), 30000);
 </script>
 {% endblock %}

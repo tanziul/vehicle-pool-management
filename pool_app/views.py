@@ -116,7 +116,7 @@ def request_vehicle(request, vehicle_id):
     if request.user.role not in ['Employee', 'Manager', 'HR']:
         return redirect('dashboard')
     
-    vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')  # Only truly Available
+    vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')  
     
     if request.method == 'POST':
         form = BookingForm(request.POST)
@@ -144,9 +144,11 @@ def request_vehicle(request, vehicle_id):
         form = BookingForm()
     
     return render(request, 'user/request_form.html', {'form': form, 'vehicle': vehicle})
+
 # ======================
 # ADMIN VIEWS
 # ======================
+
 @login_required
 def admin_dashboard(request):
     update_expired_bookings()
@@ -202,6 +204,11 @@ def admin_vehicles(request):
         v.is_in_use = v.bookings.filter(status='Approved').exists()
         v.pending_bookings_count = v.bookings.filter(status='Pending').count()
 
+    try:
+        v.current_driver_name = v.assigned_driver.name if v.assigned_driver else None
+    except:
+        v.current_driver_name = None
+
     if request.method == 'POST':
         try:
             with transaction.atomic():
@@ -212,7 +219,7 @@ def admin_vehicles(request):
                     status='Available'
                 )
 
-                driver_id = request.POST.get('assigned_driver')
+                driver_id = request.POST.get('assigned_driver', '').strip()
                 if driver_id:
                     driver = get_object_or_404(
                         Driver,
@@ -221,10 +228,12 @@ def admin_vehicles(request):
                         assigned_vehicle__isnull=True
                     )
                     driver.assigned_vehicle = vehicle
-                    driver.save()
+                    driver.save(update_fields=['assigned_vehicle'])
+                    
                     messages.success(request, f'Vehicle added and assigned to {driver.name}')
                 else:
                     messages.success(request, 'Vehicle added successfully')
+                
 
         except Exception as e:
             messages.error(request, f'Error: {e}')
@@ -234,7 +243,6 @@ def admin_vehicles(request):
         'vehicles': vehicles,
         'drivers': available_drivers
     })
-
 
 @login_required
 def edit_vehicle(request, pk):
@@ -247,66 +255,67 @@ def edit_vehicle(request, pk):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # Update basic fields
+                
                 vehicle.model = request.POST['model'].strip()
                 vehicle.vehicle_number = request.POST['vehicle_number'].strip().upper()
                 vehicle.capacity = int(request.POST['capacity'])
                 new_status = request.POST['status']
                 driver_choice = request.POST.get('assigned_driver', '').strip()
 
-                current_driver = vehicle.assigned_driver  # Can be None — safe
+                
+                try:
+                    current_driver = vehicle.assigned_driver
+                except Driver.DoesNotExist:
+                    current_driver = None
 
-                # 1. GOING TO "Out of Service" → free driver + save history
+               
                 if new_status == 'Out of Service':
                     if current_driver:
                         vehicle.last_assigned_driver = current_driver
                         current_driver.assigned_vehicle = None
                         current_driver.save(update_fields=['assigned_vehicle'])
 
-                # 2. DRIVER ASSIGNMENT LOGIC — FINAL & SAFE
+                
                 if driver_choice and driver_choice != 'remove':
-                    # User selected a real driver ID (e.g. "5")
+                    
                     new_driver = get_object_or_404(Driver, id=int(driver_choice), status='Active')
-
-                    # Prevent assigning a busy driver
+                    
                     if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
-                        messages.error(request, f"{new_driver.name} is already assigned to another vehicle!")
+                        messages.error(request, f"{new_driver.name} is already assigned!")
                         return redirect('admin_vehicles')
 
-                    # Free current driver if exists and different
-                    if current_driver and current_driver != new_driver:
-                        current_driver.assigned_vehicle = None
-                        current_driver.save(update_fields=['assigned_vehicle'])
-
-                    # Assign the new driver
-                    new_driver.assigned_vehicle = vehicle
-                    new_driver.save(update_fields=['assigned_vehicle'])
-
-                elif driver_choice == 'remove':
-                    # Explicitly remove driver
+                    
                     if current_driver:
                         current_driver.assigned_vehicle = None
                         current_driver.save(update_fields=['assigned_vehicle'])
 
-                # If driver_choice is empty or same as current → DO NOTHING (perfectly safe)
+              
+                    new_driver.assigned_vehicle = vehicle
+                    new_driver.save(update_fields=['assigned_vehicle'])
 
-                # Finally update status and save vehicle
+                elif driver_choice == 'remove':
+                    
+                    if current_driver:
+                        current_driver.assigned_vehicle = None
+                        current_driver.save(update_fields=['assigned_vehicle'])
+
+                
+
+                
                 vehicle.status = new_status
                 vehicle.save()
 
-                messages.success(request, f"Vehicle updated → {new_status}")
+                messages.success(request, "Vehicle updated successfully!")
                 return redirect('admin_vehicles')
 
         except Exception as e:
-            messages.error(request, f"Error updating vehicle: {str(e)}")
+            messages.error(request, f"Error: {str(e)}")
             import traceback
-            traceback.print_exc()  # This will show you the real error in terminal
+            traceback.print_exc()
 
         return redirect('admin_vehicles')
 
-    # If GET request → just redirect (modal handles display)
     return redirect('admin_vehicles')
-
 
 
 @login_required
@@ -386,20 +395,26 @@ def admin_reports(request):
     return render(request, 'admin/reports.html', {'reports': reports})
 
 
+# ====================== USER MANAGEMENT ======================
 @login_required
 def admin_users(request):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
-    users = User.objects.all().order_by('role', 'username')
-    return render(request, 'admin/users.html', {'users': users, 'ROLE_CHOICES': User.ROLE_CHOICES})
+    
+    users = User.objects.all().order_by('-is_active', 'role', 'username')
+    return render(request, 'admin/users.html', {
+        'users': users,
+        'ROLE_CHOICES': User.ROLE_CHOICES
+    })
 
 
-@login_required
+@login_required  
 def add_user(request):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
+        
     if request.method == 'POST':
         try:
             user = User.objects.create_user(
@@ -412,9 +427,9 @@ def add_user(request):
             )
             user.is_active = True
             user.save()
-            messages.success(request, f'User "{user.get_full_name() or user.username}" created.')
+            messages.success(request, f"User '{user.get_full_name() or user.username}' created successfully!")
         except Exception as e:
-            messages.error(request, f'Error: {str(e)}')
+            messages.error(request, f"Error: {e}")
     return redirect('admin_users')
 
 
@@ -423,20 +438,31 @@ def edit_user(request, pk):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
+        
     user = get_object_or_404(User, pk=pk)
+    
     if request.method == 'POST':
         try:
             user.username = request.POST['username'].strip()
-            user.first_name = request.POST['first_name'].strip()
-            user.last_name = request.POST['last_name'].strip()
+            user.first_name = request.POST.get('first_name', '').strip()
+            user.last_name = request.POST.get('last_name', '').strip()
             user.email = request.POST.get('email', '').strip()
             user.role = request.POST['role']
+            
+            # HANDLE DEACTIVATION — THIS IS THE KEY
+            user.is_active = 'is_active' in request.POST  # checkbox checked = active
+            
             if request.POST.get('password'):
                 user.set_password(request.POST['password'])
+                
             user.save()
-            messages.success(request, f'User "{user.get_full_name() or user.username}" updated.')
+            
+            status = "deactivated (left company)" if not user.is_active else "updated"
+            messages.success(request, f"User '{user.get_full_name() or user.username}' {status}.")
+            
         except Exception as e:
-            messages.error(request, f'Update failed: {e}')
+            messages.error(request, f"Update failed: {e}")
+            
     return redirect('admin_users')
 
 
