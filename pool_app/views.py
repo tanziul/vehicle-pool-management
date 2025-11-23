@@ -111,6 +111,7 @@ def admin_dashboard(request):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
+    
     now = timezone.now()
     stats = {
         'total_vehicles': Vehicle.objects.count(),
@@ -122,14 +123,21 @@ def admin_dashboard(request):
         'pending_requests': Booking.objects.filter(status='Pending').count(),
         'completed_this_month': TripReport.objects.filter(completed_at__year=now.year, completed_at__month=now.month).count(),
     }
-    return render(request, 'admin/dashboard.html', stats)
 
+    # THIS LINE FIXES THE ERROR FOREVER
+    stats['inactive_drivers'] = stats['total_drivers'] - stats['active_drivers']
+
+    # Pending bookings for table
+    stats['pending_bookings'] = Booking.objects.filter(status='Pending').select_related('employee', 'vehicle').order_by('-created_at')
+
+    return render(request, 'admin/dashboard.html', stats)
 
 @login_required
 def admin_bookings(request):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
+    
     bookings = Booking.objects.select_related('employee', 'vehicle', 'approved_by').all().order_by('-priority', 'start_time')
     q = request.GET.get('q', '').strip()
     if q:
@@ -137,10 +145,8 @@ def admin_bookings(request):
             'employee__first_name', 'employee__last_name', 'employee__username',
             'vehicle__model', 'vehicle__vehicle_number', 'destination', 'purpose'
         ], q)
-    available_vehicles = Vehicle.objects.filter(status='Available')
+    available_vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
     return render(request, 'admin/bookings.html', {'bookings': bookings, 'vehicles': available_vehicles, 'now': timezone.now()})
-
-
 @login_required
 def admin_vehicles(request):
     update_expired_bookings()

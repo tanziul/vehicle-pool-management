@@ -16,6 +16,9 @@
         <div class="input-group">
             <input type="text" name="q" class="form-control" placeholder="Search by name, phone, license..." value="{{ request.GET.q }}">
             <button class="btn btn-primary">Search</button>
+            {% if request.GET.q %}
+             <a href="{% url 'admin_drivers' %}" class="btn btn-outline-secondary ms-2">Clear</a>
+            {% endif %}
         </div>
     </form>
 
