@@ -124,10 +124,10 @@ def admin_dashboard(request):
         'completed_this_month': TripReport.objects.filter(completed_at__year=now.year, completed_at__month=now.month).count(),
     }
 
-    # THIS LINE FIXES THE ERROR FOREVER
+    
     stats['inactive_drivers'] = stats['total_drivers'] - stats['active_drivers']
 
-    # Pending bookings for table
+  
     stats['pending_bookings'] = Booking.objects.filter(status='Pending').select_related('employee', 'vehicle').order_by('-created_at')
 
     return render(request, 'admin/dashboard.html', stats)

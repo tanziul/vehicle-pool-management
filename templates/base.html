@@ -1,17 +1,91 @@
-﻿<!-- templates/base.html -->
-{% load static %}
+﻿{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}VPMS{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block page_title %}EpacCar{% endblock %} - Vehicle Pool Management</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'pool_app/css/style.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="{% static 'pool_app/css/style.css' %}?v={{ cache_buster }}" rel="stylesheet">
 </head>
 <body>
-    {% block content %}{% endblock %}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<div class="app-container">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <h3 class="mb-0 text-success fw-bold">EpacCar</h3>
+        </div>
+
+        <nav class="sidebar-nav">
+            {% if user.is_staff %}
+                <a href="{% url 'admin_dashboard' %}" class="nav-link {% if 'dashboard' in request.path %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+                </a>
+                <a href="{% url 'admin_bookings' %}" class="nav-link {% if 'bookings' in request.path %}active{% endif %}">
+                    <i class="bi bi-calendar-check"></i> <span>All Bookings</span>
+                </a>
+                <a href="{% url 'admin_vehicles' %}" class="nav-link {% if 'vehicles' in request.path %}active{% endif %}">
+                    <i class="bi bi-truck"></i> <span>Vehicles</span>
+                </a>
+                <a href="{% url 'admin_drivers' %}" class="nav-link {% if 'drivers' in request.path %}active{% endif %}">
+                    <i class="bi bi-person-badge"></i> <span>Drivers</span>
+                </a>
+                <a href="{% url 'admin_users' %}" class="nav-link {% if 'users' in request.path %}active{% endif %}">
+                    <i class="bi bi-people"></i> <span>Users</span>
+                </a>
+                <a href="{% url 'admin_reports' %}" class="nav-link {% if 'report' in request.path %}active{% endif %}">
+                    <i class="bi bi-file-earmark-text"></i> <span>Trip Reports</span>
+                </a>
+            {% else %}
+                <a href="{% url 'user_dashboard' %}" class="nav-link {% if 'dashboard' in request.path %}active{% endif %}">
+                    <i class="bi bi-house-door"></i> <span>Dashboard</span>
+                </a>
+                <a href="{% url 'user_bookings' %}" class="nav-link {% if 'bookings' in request.path %}active{% endif %}">
+                    <i class="bi bi-clock-history"></i> <span>My Bookings</span>
+                </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="{% url 'logout' %}" class="nav-link text-danger">
+                <i class="bi bi-box-arrow-right"></i> <span>Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT + HEADER -->
+    <div class="main-content-area">
+
+        <!-- FIXED TOP HEADER -->
+        <header class="top-header">
+            <div class="user-dropdown">
+                <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="{% static 'pool_app/image/admin.jpg' %}" alt="Profile" class="profile-img">
+                    <div class="profile-info">
+                        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div class="user-role">{% if user.is_staff %}Administrator{% else %}Employee{% endif %}</div>
+                    </div>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Profile</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                </ul>
+            </div>
+        </header>
+
+        <!-- PAGE CONTENT -->
+        <main class="page-content">
+            <div class="content-padding">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
