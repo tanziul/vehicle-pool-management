@@ -5,8 +5,6 @@
 
 {% block content %}
 <div class="page-wrapper">
-
-    <!-- ONLY ONE CARD — NO EXTRA HEADER — DIRECT SEARCH + ADD BUTTON -->
     <div class="content-card">
 
         <!-- Top Action Bar (Search + Add Button) — sits right under the main header -->
@@ -114,32 +112,52 @@
         </div>
     </div>
 </div>
-
-<!-- Add Driver Modal -->
-<div class="modal fade" id="addDriverModal">
-    <div class="modal-dialog modal-dialog-centered">
-        <form method="post">
-            {% csrf_token %}
-            <div class="modal-content">
+<!-- Add Driver Modal — WIDE & PERFECT -->
+<div class="modal fade" id="addDriverModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <form method="post">
+                {% csrf_token %}
                 <div class="modal-header bg-success text-white">
-                    <h5>Add New Driver</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus me-2"></i>Add New Driver
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <input name="name" placeholder="Name" class="form-control mb-3" required>
-                    <input name="phone" placeholder="Phone" class="form-control mb-3" required>
-                    <input name="license_no" placeholder="License No" class="form-control mb-3" required>
-                    <select name="status" class="form-select">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
+                <div class="modal-body py-4">
+                    <!-- -->
+                    <div class="container-fluid">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Full Name</label>
+                                <input name="name" placeholder="Enter driver name" class="form-control form-control-lg" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Phone Number</label>
+                                <input name="phone" placeholder="01xxxxxxxxx" class="form-control form-control-lg" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">License Number</label>
+                                <input name="license_no" placeholder="e.g. DHK-123456" class="form-control form-control-lg" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Status</label>
+                                <select name="status" class="form-select form-select-lg">
+                                    <option value="Active" selected>Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" name="add_driver" class="btn btn-success">Add Driver</button>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" name="add_driver" class="btn btn-success btn-lg px-4">
+                        <i class="bi bi-check2"></i> Add Driver
+                    </button>
                 </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

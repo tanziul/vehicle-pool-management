@@ -1,192 +1,147 @@
 ﻿{% extends "base.html" %}
+{% load static %}
+
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="pt-4">
-    <div class="row">
-        <div class="col-12 mb-4">
-            <h2>Welcome, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>!</h2>
-            <p class="text-muted">Fleet overview at a glance.</p>
-        </div>
-    </div>
+<div class="page-wrapper">
+    <!-- DASHBOARD CARD -->
+    <div class="content-card">
+        <!-- WELCOME + STATS -->
+        <div class="p-4 pb-0">
+            <h2 class="mb-1">Welcome back, <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>!</h2>
+            <p class="text-muted mb-4">Fleet overview at a glance • {{ today|date:"l, F j, Y" }}</p>
 
-    <!--  CARDS —  -->
-    <div class="row g-3 mb-5">
-        <!-- VEHICLES -->
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title mb-0">{{ total_vehicles }}</h5>
-                            <p class="text-muted small mb-0">Vehicles</p>
+            <!-- STATS CARDS -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card bg-gradient-primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0 text-white">{{ total_vehicles }}</h3>
+                                <p class="mb-0 text-white opacity-90">Total Vehicles</p>
+                            </div>
+                            <i class="bi bi-truck fs-1 text-white opacity-70"></i>
                         </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-truck fs-2 text-primary"></i>
+                        <div class="mt-3 small">
+                            <span class="text-success-light">{{ available_vehicles }} Available</span> • 
+                            <span class="text-warning-light">{{ maintenance_vehicles }} Maintenance</span>
                         </div>
                     </div>
-                    <hr>
-                    <div class="d-flex justify-content-between small">
-                        <span class="text-success">{{ available_vehicles }} Available</span>
-                        <span class="text-warning">{{ maintenance_vehicles }} Maintenance</span>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card bg-gradient-success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0 text-white">{{ total_drivers }}</h3>
+                                <p class="mb-0 text-white opacity-90">Total Drivers</p>
+                            </div>
+                            <i class="bi bi-person-badge fs-1 text-white opacity-70"></i>
+                        </div>
+                        <div class="mt-3 small">
+                            <span class="text-success-light">{{ active_drivers }} Active</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card bg-gradient-warning">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0 text-white">{{ pending_requests }}</h3>
+                                <p class="mb-0 text-white opacity-90">Pending Requests</p>
+                            </div>
+                            <i class="bi bi-clock-history fs-1 text-white opacity-70"></i>
+                        </div>
+                        <div class="mt-3 small text-white opacity-90">
+                            {{ approved_requests }} approved today
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card bg-gradient-info">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h3 class="mb-0 text-white">{{ completed_this_month }}</h3>
+                                <p class="mb-0 text-white opacity-90">Trips This Month</p>
+                            </div>
+                            <i class="bi bi-check2-circle fs-1 text-white opacity-70"></i>
+                        </div>
+                        <div class="mt-3 small text-white opacity-90">
+                            {{ total_completed }} total completed
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-<!-- DRIVERS -->
-<div class="col-md-3">
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <div class="d-flex justify-content-between">
-                <div>
-                    <h5 class="card-title mb-0">{{ total_drivers }}</h5>
-                    <p class="text-muted small mb-0">Drivers</p>
-                </div>
-                <div class="align-self-center">
-                    <i class="bi bi-person-badge fs-2 text-success"></i>
-                </div>
-            </div>
-            <hr>
-            <div class="d-flex justify-content-between small">
-                <span class="text-success">{{ active_drivers }} Active</span>
-                <span class="text-secondary">{{ inactive_drivers }} Inactive</span>
-            </div>
-        </div>
-    </div>
-</div>
-        <!-- BOOKINGS -->
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title mb-0">{{ pending_requests }}</h5>
-                            <p class="text-muted small mb-0">Pending Requests</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-clock-history fs-2 text-warning"></i>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="small">
-                        <span class="text-success">{{ approved_requests }} Approved Today</span>
-                    </div>
-                </div>
+
+            <!-- QUICK ACTIONS -->
+            <div class="d-flex gap-3 flex-wrap">
+                <a href="{% url 'admin_vehicles' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-truck me-2"></i>Manage Vehicles
+                </a>
+                <a href="{% url 'admin_drivers' %}" class="btn btn-outline-success btn-lg">
+                    <i class="bi bi-people me-2"></i>Manage Drivers
+                </a>
+                <a href="{% url 'admin_bookings' %}" class="btn btn-outline-warning btn-lg">
+                    <i class="bi bi-calendar-check me-2"></i>All Bookings
+                </a>
             </div>
         </div>
 
-        <!-- TRIPS -->
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h5 class="card-title mb-0">{{ completed_this_month }}</h5>
-                            <p class="text-muted small mb-0">Trips This Month</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-check2-circle fs-2 text-info"></i>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="small">
-                        <span class="text-success">{{ total_completed }} Total Completed</span>
-                    </div>
-                </div>
+        <!-- PENDING REQUESTS TABLE -->
+        <div class="border-top mt-4">
+            <div class="p-4 pb-2 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-clock-history text-warning me-2"></i>Recent Pending Requests ({{ pending_requests }})</h5>
+                <a href="{% url 'admin_bookings' %}" class="btn btn-sm btn-outline-primary">View All →</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table data-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Vehicle</th>
+                            <th>Destination</th>
+                            <th>Start • End</th>
+                            <th>Priority</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in pending_bookings %}
+                        <tr>
+                            <td><strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong></td>
+                            <td><span class="badge bg-primary">{{ b.vehicle.vehicle_number }}</span></td>
+                            <td>{{ b.destination|default:"—" }}</td>
+                            <td><small>{{ b.start_time|date:"M j, H:i" }} → {{ b.end_time|date:"H:i"|default:"—" }}</small></td>
+                            <td>
+                                <span class="badge {% if b.priority == 5 %}bg-danger{% elif b.priority == 4 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ b.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <form method="post" action="{% url 'approve_booking' b.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                                    </form>
+                                    <form method="post" action="{% url 'reject_booking' b.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-success">
+                                <i class="bi bi-check2-all fs-1"></i><br>
+                                <strong>All caught up! No pending requests.</strong>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-
-    <!-- QUICK ACTIONS -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex gap-2">
-                <a href="{% url 'admin_vehicles' %}" class="btn btn-outline-primary">Manage Vehicles</a>
-                <a href="{% url 'admin_drivers' %}" class="btn btn-outline-success">Manage Drivers</a>
-               
-            </div>
-        </div>
-    </div>
-<!-- PENDING REQUESTS TABLE — EXACT SAME COLUMNS AS BOOKINGS PAGE -->
-<div class="card border-0 shadow-sm mt-5">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            <i class="bi bi-clock-history text-warning"></i>
-            Recent Pending Booking Requests ({{ pending_requests }})
-        </h5>
-        <a href="{% url 'admin_bookings' %}" class="btn btn-sm btn-outline-primary">
-            View All Bookings →
-        </a>
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Employee</th>
-                        <th>Vehicle</th>
-                        <th>Destination</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th class="text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for booking in pending_bookings %}
-                    <tr>
-                        <td>
-                            <strong>{{ booking.employee.get_full_name|default:booking.employee.username }}</strong>
-                            <br><small class="text-muted">{{ booking.employee.get_role_display }}</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-primary">{{ booking.vehicle.vehicle_number }}</span>
-                            <br><small>{{ booking.vehicle.model }}</small>
-                        </td>
-                        <td>{{ booking.destination|default:"—" }}</td>
-                        <td>{{ booking.start_time|date:"d M, Y H:i" }}</td>
-                        <td>{{ booking.end_time|date:"d M, Y H:i" }}</td>
-                        <td>
-                            <span class="badge 
-                                {% if booking.priority == 1 %}bg-danger
-                                {% elif booking.priority == 2 %}bg-warning text-dark
-                                {% else %}bg-secondary{% endif %}">
-                                {% if booking.priority == 1 %}HR
-                                {% elif booking.priority == 2 %}Manager
-                                {% else %}Employee{% endif %}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge bg-warning text-dark">Pending</span>
-                        </td>
-                        <td class="text-center">
-                            <form method="post" action="{% url 'approve_booking' booking.pk %}" class="d-inline">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-success" title="Approve">
-                                    Approve
-                                </button>
-                            </form>
-                            <form method="post" action="{% url 'reject_booking' booking.pk %}" class="d-inline ms-1">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger" title="Reject">
-                                    Reject
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="bi bi-check2-all fs-1"></i><br>
-                            No pending requests — All caught up!
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
 </div>
 {% endblock %}

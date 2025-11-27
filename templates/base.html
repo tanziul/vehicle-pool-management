@@ -33,6 +33,8 @@
                 </a>
                 <a href="{% url 'admin_drivers' %}" class="nav-link {% if 'drivers' in request.path %}active{% endif %}">
                     <i class="bi bi-person-badge"></i> <span>Drivers</span>
+
+                    
                 </a>
                 <a href="{% url 'admin_users' %}" class="nav-link {% if 'users' in request.path %}active{% endif %}">
                     <i class="bi bi-people"></i> <span>Users</span>
@@ -72,7 +74,7 @@
             <img src="{% static 'pool_app/image/admin.jpg' %}" alt="Profile" class="profile-img">
             <div class="profile-info">
                 <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                <div class="user-role">{% if user.is_staff %}Administrator{% else %}Employee{% endif %}</div>
+                <div class="user-role">{% if user.is_staff %}Admin{% else %}Employee{% endif %}</div>
             </div>
         </a>
         <ul class="dropdown-menu dropdown-menu-end">
@@ -95,3 +97,4 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
