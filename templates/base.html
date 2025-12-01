@@ -15,10 +15,16 @@
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
-     <div class="sidebar-brand">
-         <h3 class="brand-title">eGari</h3>
-        <small class="brand-subtitle">Energypac</small>
-     </div>
+<!-- SIDEBAR BRAND — EXACT SAME AS LOGIN PAGE (PERFECT) -->
+<div class="sidebar-brand">
+    <div class="sidebar-energypac-logo">
+        <img src="{% static 'pool_app/image/logo.png' %}" alt="Energypac" class="energypac-sidebar-icon">
+        <div class="energypac-sidebar-text">
+            Energypac<span class="reg">®</span>
+        </div>
+    </div>
+    <small class="egari-subtitle">eGari</small>
+</div>
 
         <nav class="sidebar-nav">
             {% if user.is_staff %}
