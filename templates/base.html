@@ -58,11 +58,12 @@
             {% endif %}
         </nav>
 
-        <div class="sidebar-footer">
-            <a href="{% url 'logout' %}" class="nav-link text-danger">
-                <i class="bi bi-box-arrow-right"></i> <span>Logout</span>
-            </a>
-        </div>
+<div class="sidebar-footer">
+    <a href="{% url 'logout' %}" class="nav-link logout-btn">
+        <span>Logout</span>
+        <i class="bi bi-box-arrow-right"></i>
+    </a>
+</div>
     </aside>
 
     <!-- MAIN CONTENT + HEADER -->
@@ -74,21 +75,24 @@
             Dashboard
         {% endblock %}
     </div>
-
-    <div class="user-dropdown ms-auto">
-        <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-            <img src="{% static 'pool_app/image/admin.jpg' %}" alt="Profile" class="profile-img">
-            <div class="profile-info">
-                <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
-                <div class="user-role">{% if user.is_staff %}Admin{% else %}Employee{% endif %}</div>
-            </div>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Profile</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
-        </ul>
-    </div>
+<div class="user-dropdown ms-auto">
+    <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <img src="{% static 'pool_app/image/admin.jpg' %}" alt="Profile" class="profile-img">
+        <div class="profile-info">
+            <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+            <div class="user-role">{% if user.is_staff %}Admin{% else %}Employee{% endif %}</div>
+        </div>
+        <i class="bi bi-chevron-down ms-2"></i>   <!-- THIS IS THE DROPDOWN ICON -->
+    </a>
+    
+    <!-- Your dropdown menu goes here -->
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="#">Profile</a></li>
+        
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+    </ul>
+</div>
 </header>
 
         <!-- PAGE CONTENT -->
