@@ -523,13 +523,12 @@ html, body {
 /* ============================================= */
 /*               PAGE CONTENT                    */
 /* ============================================= */
-.page-content { flex-grow: 1; background: #f8f9fa; }
-.content-padding { padding: 2rem 2.5rem; }
+.page-content { flex-grow: 1; background: #f8f9fa; padding: 2rem 2.5rem; }
 
 /* ============================================= */
 /*             DRIVERS PAGE – CLEAN              */
 /* ============================================= */
-.page-wrapper { padding: 1.5rem; background: #f8f9fa; }
+.page-wrapper { background: #f8f9fa; }
 
 .content-card {
     background: white;
@@ -662,31 +661,63 @@ html { scroll-behavior: smooth; }
 .text-success-light { color: #86efac !important; }
 .text-warning-light { color: #fde68a !important; }
 
-#addUserModal .modal-dialog,
-#addDriverModal .modal-dialog {
-    --bs-modal-width: 750px;
+
+
+/* ============================================= */
+/*           CONSISTENT PAGE SPACING             */
+/* ============================================= */
+
+/* Consistent spacing for all admin pages */
+.page-wrapper {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
-/* === FIX ALL PAGE GAPS — MAKE THEM LIKE DRIVERS PAGE === */
-.content-padding,   /* <--- ADD THIS LINE */
-.content-wrapper,
-.main-content,
-.card,
-.card-body,
-.page-wrapper,
-.container-fluid,
-.container,
-.row,
-.mt-4, .mt-5, .mt-6, .mt-8, .mt-10,
-.pt-4, .pt-5, .pt-6, .py-4, .py-5,
-.p-4, .p-5 {
-    margin-top: 0.75rem !important;   /* 12px — same as Drivers page */
-    padding-top: 0.5rem !important;
-    margin-bottom: 0.5rem !important;
+/* Ensure consistent header positioning */
+.main-content-area {
+    padding-top: var(--header-height) !important;
 }
 
-/* Extra safety — kill any large top spacing */
-[class*="content"], [class*="wrapper"], [class*="main"] {
-    padding-top: 0.5rem !important;
-    margin-top: 0.75rem !important;
+/* Remove any conflicting margins */
+.content-card {
+    margin-top: 0 !important;
+}
+
+/* ============================================= */
+/*           SIDEBAR POSITIONING FIX             */
+/* ============================================= */
+
+/* Ensure sidebar stays fixed and consistent */
+.sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    z-index: 1000 !important;
+}
+
+/* Prevent any content from affecting sidebar position */
+.app-container {
+    display: flex;
+    min-height: 100vh;
+    position: relative;
+}
+
+/* ============================================= */
+/*           MODAL FIXES - MINIMAL              */
+/* ============================================= */
+
+/* Simple modal width fix */
+.modal-dialog.modal-lg {
+    max-width: 900px;
+}
+
+/* Responsive – keeps modals nice on small screens */
+@media (max-width: 575px) {
+    .modal-dialog {
+        margin: 1rem !important;
+    }
+    .modal-dialog.modal-lg {
+        max-width: 95vw !important;  /* Responsive on small screens */
+    }
 }
