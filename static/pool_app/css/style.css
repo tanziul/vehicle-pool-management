@@ -43,7 +43,7 @@ html, body {
 .energypac-top-brand {
     position: absolute;
     top: 40px;
-    left: 50px;
+    left: 55px;
     display: flex;
     align-items: center;
     gap: 16px;
