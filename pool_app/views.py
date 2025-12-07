@@ -49,9 +49,10 @@ def login_view(request):
 @login_required
 def logout_view(request):
     logout(request)
-    messages.success(request, 'Logged out.')
-    return redirect('home')
 
+    list(messages.get_messages(request))  
+    messages.success(request, 'Logged out successfully.')
+    return redirect('home')
 @login_required
 def dashboard(request):
     update_expired_bookings()
@@ -147,6 +148,7 @@ def admin_bookings(request):
         ], q)
     available_vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
     return render(request, 'admin/bookings.html', {'bookings': bookings, 'vehicles': available_vehicles, 'now': timezone.now()})
+
 @login_required
 def admin_vehicles(request):
     update_expired_bookings()
@@ -176,59 +178,75 @@ def admin_vehicles(request):
                     driver = get_object_or_404(Driver, id=driver_id)
                     driver.assigned_vehicle = vehicle
                     driver.save()
-                    messages.success(request, f"Assigned to {driver.name}")
                 messages.success(request, "Vehicle added!")
         except Exception as e:
             messages.error(request, f"Error: {e}")
         return redirect('admin_vehicles')
 
     return render(request, 'admin/vehicles.html', {'vehicles': vehicles, 'drivers': drivers})
-
-
 @login_required
 def edit_vehicle(request, pk):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
+
     vehicle = get_object_or_404(Vehicle, pk=pk)
+    drivers = Driver.objects.filter(status='Active')
+
     if request.method == 'POST':
         try:
             with transaction.atomic():
+               
                 vehicle.model = request.POST['model'].strip()
                 vehicle.vehicle_number = request.POST['vehicle_number'].strip().upper()
                 vehicle.capacity = int(request.POST['capacity'])
                 new_status = request.POST['status']
-                driver_choice = request.POST.get('assigned_driver', '').strip()
-                current_driver = vehicle.assigned_driver
 
-                if new_status == 'Out of Service' and current_driver:
-                    vehicle.last_assigned_driver = current_driver
-                    current_driver.assigned_vehicle = None
-                    current_driver.save()
+         
+                driver_id = request.POST.get('assigned_driver', '')
 
-                if driver_choice and driver_choice != 'remove':
-                    new_driver = get_object_or_404(Driver, id=int(driver_choice))
-                    if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
-                        messages.error(request, "Driver already assigned!")
-                        return redirect('admin_vehicles')
+                
+                current_driver = vehicle.assigned_driver if hasattr(vehicle, 'assigned_driver') else None
+
+              
+                if not driver_id:
                     if current_driver:
                         current_driver.assigned_vehicle = None
-                        current_driver.save()
+                        current_driver.save(update_fields=['assigned_vehicle'])
+
+                
+                else:
+                    new_driver = get_object_or_404(Driver, id=int(driver_id), status='Active')
+
+                    if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
+                        messages.error(request, f"Driver {new_driver.name} is already assigned to another vehicle!")
+                        return redirect('admin_vehicles')
+
+                   
+                    if current_driver and current_driver != new_driver:
+                        current_driver.assigned_vehicle = None
+                        current_driver.save(update_fields=['assigned_vehicle'])
+
+                    
                     new_driver.assigned_vehicle = vehicle
-                    new_driver.save()
-                elif driver_choice == 'remove' and current_driver:
+                    new_driver.save(update_fields=['assigned_vehicle'])
+
+               
+                if new_status in ['Maintenance', 'Out of Service'] and current_driver:
+                    vehicle.last_assigned_driver = current_driver
                     current_driver.assigned_vehicle = None
-                    current_driver.save()
+                    current_driver.save(update_fields=['assigned_vehicle'])
 
                 vehicle.status = new_status
                 vehicle.save()
-                messages.success(request, "Vehicle updated!")
+
+                messages.success(request, "Vehicle updated successfully!")
         except Exception as e:
-            messages.error(request, f"Error: {e}")
+            messages.error(request, f"Error: {str(e)}")
+
         return redirect('admin_vehicles')
+
     return redirect('admin_vehicles')
-
-
 @login_required
 def admin_drivers(request):
     update_expired_bookings()

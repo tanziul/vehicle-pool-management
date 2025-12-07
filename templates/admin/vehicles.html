@@ -73,19 +73,41 @@
                         <td class="fw-bold text-dark">{{ v.model }}</td>
                         <td><strong>{{ v.vehicle_number }}</strong></td>
                         <td><span class="badge bg-light text-dark">{{ v.capacity }} seats</span></td>
-                        <td>
-                            {% if v.assigned_driver %}
-                                {% if v.assigned_driver.status == 'Active' %}
-                                    <span class="badge bg-success">{{ v.assigned_driver.name }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary text-decoration-line-through">{{ v.assigned_driver.name }}</span>
-                                    <small class="text-muted d-block">Inactive Driver</small>
-                                {% endif %}
-                            {% else %}
-                                <em class="text-muted">No driver</em>
-                            {% endif %}
-                        </td>
-                        <td>
+<td>
+    {% if v.assigned_driver %}
+        {% if v.status == 'Maintenance' %}
+            <span class="badge bg-warning text-dark">
+                {{ v.assigned_driver.name }}
+            </span>
+            <br>
+            <small class="text-muted"><i class="bi bi-tools"></i> Vehicle in Maintenance</small>
+        {% elif v.status == 'Out of Service' %}
+            <span class="badge bg-secondary text-decoration-line-through">
+                {{ v.last_assigned_driver.name|default:v.assigned_driver.name }}
+            </span>
+            <br>
+            <small class="text-muted"><i class="bi bi-exclude"></i> Previously assigned</small>
+        {% else %}
+            <span class="badge bg-success">
+                {{ v.assigned_driver.name }}
+            </span>
+        {% endif %}
+    {% else %}
+        {% if v.last_assigned_driver and v.status == 'Out of Service' %}
+            <span class="badge bg-secondary text-decoration-line-through">
+                {{ v.last_assigned_driver.name }}
+            </span>
+            <br>
+            <small class="text-muted"><i class="bi bi-exclude"></i> Previously assigned</small>
+        {% elif v.status == 'Maintenance' %}
+            <span class="badge bg-light text-dark border">No driver</span>
+            <br>
+            <small class="text-muted"><i class="bi bi-tools"></i> Vehicle in Maintenance</small>
+        {% else %}
+            <em class="text-muted">No driver</em>
+        {% endif %}
+    {% endif %}
+</td>                 <td>
                             {% if v.status == 'Available' %}
                                 <span class="status-badge status-available">Available</span>
                             {% elif v.status == 'Booked' %}
@@ -104,65 +126,66 @@
                             </button>
                         </td>
                     </tr>
-
-                    <!-- Edit Modal -->
-                    <div class="modal fade" id="editVehicle{{ v.id }}">
-                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                            <form method="post" action="{% url 'edit_vehicle' v.id %}">
-                                {% csrf_token %}
-                                <div class="modal-content border-0 shadow">
-                                    <div class="modal-header bg-warning text-dark">
-                                        <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Edit {{ v.model }}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Model</label>
-                                                <input name="model" value="{{ v.model }}" class="form-control" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Plate Number</label>
-                                                <input name="vehicle_number" value="{{ v.vehicle_number }}" class="form-control" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Seats</label>
-                                                <input name="capacity" value="{{ v.capacity }}" type="number" min="1" class="form-control" required>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">Status</label>
-                                                <select name="status" class="form-select">
-                                                    <option value="Available" {% if v.status == 'Available' %}selected{% endif %}>Available</option>
-                                                    <option value="Maintenance" {% if v.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
-                                                    <option value="Out of Service" {% if v.status == 'Out of Service' %}selected{% endif %}>Out of Service</option>
-                                                </select>
-                                                <small class="text-muted">Booked/Reserved is auto-managed</small>
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label fw-semibold">Assign Driver</label>
-                                                <select name="assigned_driver" class="form-select">
-                                                    <option value="">— No Driver —</option>
-                                                    <option value="remove" {% if not v.assigned_driver %}selected{% endif %}>--- Remove Current Driver ---</option>
-                                                    {% for d in drivers %}
-                                                        <option value="{{ d.id }}" 
-                                                            {% if v.assigned_driver and v.assigned_driver.id == d.id %}selected{% endif %}
-                                                            {% if d.assigned_vehicle and d.assigned_vehicle != v %}disabled{% endif %}>
-                                                            {{ d.name }} ({{ d.license_no }})
-                                                            {% if d.assigned_vehicle and d.assigned_vehicle != v %} [Assigned to {{ d.assigned_vehicle.vehicle_number }}]{% endif %}
-                                                        </option>
-                                                    {% endfor %}
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="submit" class="btn btn-warning">Update Vehicle</button>
-                                    </div>
-                                </div>
-                            </form>
+<!-- Edit Modal -->
+<div class="modal fade" id="editVehicle{{ v.id }}">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form method="post" action="{% url 'edit_vehicle' v.id %}">
+            {% csrf_token %}
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">Edit {{ v.model }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label>Model</label>
+                            <input name="model" value="{{ v.model }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Plate Number</label>
+                            <input name="vehicle_number" value="{{ v.vehicle_number }}" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Seats</label>
+                            <input name="capacity" value="{{ v.capacity }}" type="number" min="1" class="form-control" required>
+                        </div>
+<div class="col-md-6">
+    <label>Status</label>
+    <select name="status" class="form-select" required>
+        <option value="Available" {% if v.status == 'Available' %}selected{% endif %}>Available</option>
+        <option value="Maintenance" {% if v.status == 'Maintenance' %}selected{% endif %}>Maintenance</option>
+        <option value="Out of Service" {% if v.status == 'Out of Service' %}selected{% endif %}>Out of Service</option>
+    </select>
+    <small class="text-muted">
+        {% if v.status in 'Maintenance,Out of Service' %}
+            Driver will be unassigned automatically
+        {% else %}
+            Driver can be assigned
+        {% endif %}
+    </small>
+</div>
+                        <div class="col-12">
+                            <label>Assign Driver</label>
+                            <select name="assigned_driver" class="form-select">
+                                <option value="">— No Driver —</option>
+                                {% for d in drivers %}
+                                    <option value="{{ d.id }}" {% if v.assigned_driver and v.assigned_driver.id == d.id %}selected{% endif %}>
+                                        {{ d.name }} ({{ d.license_no }})
+                                    </option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Update Vehicle</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
                     {% empty %}
                     <tr>
                         <td colspan="6" class="text-center py-5">
@@ -204,12 +227,14 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Assign Driver <small class="text-muted">(Optional)</small></label>
-                            <select name="assigned_driver" class="form-select">
-                                 <option value="">— No Driver —</option>
-                                {% for d in drivers %}
-                                    <option value="{{ d.id }}">{{ d.name }} ({{ d.license_no }})</option>
-                                {% endfor %}
-                            </select>
+<select name="assigned_driver" class="form-select">
+    <option value="">— No Driver —</option>
+    {% for d in drivers %}
+        <option value="{{ d.id }}" {% if v.assigned_driver and v.assigned_driver.id == d.id %}selected{% endif %}>
+            {{ d.name }} ({{ d.license_no }})
+        </option>
+    {% endfor %}
+</select>
                         </div>
                     </div>
                 </div>
