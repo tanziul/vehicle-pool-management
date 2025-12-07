@@ -643,6 +643,7 @@ html { scroll-behavior: smooth; }
 .status-reserved    { background: #dbeafe; color: hwb(246 26% 16%); }
 .status-maintenance { background: #fef3c7; color: hwb(23 18% 34%); }
 .status-out         { background: #1e293b; color: #e2e8f0; }
+.status-cancelled   { background: #f3f4f6; color: #374151; }
 
 
 /* DASHBOARD STATS CARDS */
@@ -720,4 +721,41 @@ html { scroll-behavior: smooth; }
     .modal-dialog.modal-lg {
         max-width: 95vw !important;  /* Responsive on small screens */
     }
+}
+
+
+/* ============================================= */
+/*     EMPLOYEE PAGES — 100% ADMIN CONSISTENT    */
+/*     Same cards, table, buttons, spacing       */
+/* ============================================= */
+
+/* Same button as admin "Add" buttons */
+.btn-primary-gradient {
+    background: linear-gradient(90deg, #22d3ee, #3b82f6) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 700 !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1.5rem !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 20px 40px rgba(59, 130, 246, 0.5) !important;
+}
+
+/* Same card lift effect as admin */
+.hover-lift {
+    transition: all 0.3s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+}
+
+/* Priority column hidden for employees */
+.zebra-table .d-none {
+    display: none !important;
 }

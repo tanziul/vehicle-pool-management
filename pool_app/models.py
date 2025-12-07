@@ -73,17 +73,24 @@ class Driver(models.Model):
     
     
 class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+        ('Cancelled', 'Cancelled'),
+        ('Completed', 'Completed'),
+    ]
     PRIORITY_CHOICES = [(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')]
 
     employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings_made')
     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, related_name='bookings')
     destination = models.CharField(max_length=200)
-     
+
     purpose = models.TextField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     priority = models.IntegerField(choices=PRIORITY_CHOICES, default=3)
-    status = models.CharField(max_length=20, default='Pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     approved_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_bookings'
     )

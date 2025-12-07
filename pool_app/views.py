@@ -69,13 +69,20 @@ def user_dashboard(request):
     update_expired_bookings()
     if request.user.role not in ['Employee', 'Manager', 'HR']:
         return redirect('dashboard')
+
     vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
+
     return render(request, 'user/dashboard.html', {'vehicles': vehicles})
 
 @login_required
 def user_bookings(request):
     update_expired_bookings()
     bookings = Booking.objects.filter(employee=request.user).select_related('vehicle').order_by('-created_at')
+    q = request.GET.get('q', '').strip()
+    if q:
+        bookings = search_queryset(bookings, [
+            'vehicle__model', 'vehicle__vehicle_number', 'destination', 'purpose'
+        ], q)
     return render(request, 'user/bookings.html', {'bookings': bookings})
 
 @login_required
@@ -99,8 +106,8 @@ def request_vehicle(request, vehicle_id):
             booking.save()
             vehicle.status = 'Reserved'
             vehicle.save()
-            messages.success(request, "Request submitted!")
-            return redirect('user_bookings')
+            messages.success(request, "Request submitted successfully!")
+            return redirect('user_dashboard')
     else:
         form = BookingForm()
     return render(request, 'user/request_form.html', {'form': form, 'vehicle': vehicle})
@@ -399,3 +406,16 @@ def complete_trip(request, pk):
     else:
         form = TripReportForm()
     return render(request, 'admin/complete_trip.html', {'form': form, 'booking': booking, 'vehicle': vehicle})
+
+@login_required
+def cancel_booking(request, pk):
+    update_expired_bookings()
+    booking = get_object_or_404(Booking, pk=pk, employee=request.user, status='Pending')
+    if request.method == 'POST':
+        booking.status = 'Cancelled'
+        booking.save()
+        booking.vehicle.status = 'Available'
+        booking.vehicle.save()
+        messages.success(request, "Booking cancelled successfully!")
+        return redirect('user_bookings')
+    return redirect('user_bookings')
