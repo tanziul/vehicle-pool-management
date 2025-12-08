@@ -1,9 +1,12 @@
 /* ============================================= */
-/*          EPACCAR – FINAL CLEAN & PERFECT      */
-/*     ZERO INLINE CSS • ONE-LINE HEADER CONTROL */
+/*              GLOBAL RESET & BASE              */
 /* ============================================= */
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 html, body {
     height: 100%;
@@ -11,15 +14,38 @@ html, body {
     background: #f8f9fa;
     overflow-x: hidden;
 }
-/* ===================================================== */
-/*     FINAL eGari LOGIN – ENERGYPAC AT TOP-LEFT         */
-/*   Premium • Clean • 100% Responsive • No Breakage     */
-/* ===================================================== */
+
+:root {
+    --header-height: 75px;
+    --profile-img-size: 52px;
+    --sidebar-width: 230px;
+    --sidebar-collapsed: 80px;
+    --primary-green: lch(34.52% 73.46 294.44 / 0.795);
+    --sidebar-bg: #1d2b42;
+    --card-bg: #1d2b42;
+    --text-light: hsl(0, 0%, 100%);
+    --text-muted: #e0e7ff;
+    --shadow-dark: 0 4px 15px rgba(0,0,0,0.25);
+    --shadow-light: 0 8px 32px rgba(0,0,0,0.08);
+    --border-radius: 16px;
+    --transition-speed: 0.3s ease;
+}
+
+@media (max-width: 992px) {
+    :root {
+        --header-height: 80px;
+        --profile-img-size: 48px;
+    }
+}
+
+/* ============================================= */
+/*              LOGIN PAGE STYLES                */
+/* ============================================= */
 
 .egari-final-body {
     margin: 0;
     height: 100vh;
-    background:lch(51.27% 9.72 256.43);
+    background: lch(51.27% 9.72 256.43);
     font-family: 'Poppins', sans-serif;
     overflow: hidden;
     position: relative;
@@ -37,54 +63,93 @@ html, body {
     border-bottom: none;
     pointer-events: none;
     z-index: 1;
-    background: radial-gradient(circle at 0% 100%,  #1d2b42 100%);
+    background: radial-gradient(circle at 0% 100%, var(--sidebar-bg) 100%);
 }
-/* —————— PERFECT ENERGYPAC LOGO + TEXT ALIGNMENT (LIKE OFFICIAL) —————— */
+
+/* ENERGY PAC LOGO GROUP */
+.energypac-top-brand,
+.sidebar-energypac-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 10;
+    user-select: none;
+}
+
 .energypac-top-brand {
     position: absolute;
     top: 40px;
     left: 55px;
-    display: flex;
-    align-items: center;
     gap: 16px;
-    z-index: 10;
-    user-select: none;
-
 }
 
-/* Your logo image */
-.energypac-logo-img {
-    height: 28px;           
+.energypac-logo-img,
+.energypac-sidebar-icon {
+    height: 28px;
     width: auto;
     filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
-  
-    
 }
 
+.energypac-sidebar-icon {
+    height: 22px;
+    filter: drop-shadow(0 3px 10px rgba(0,0,0,0.6));
+}
 
-.energypac-full-text {
+.energypac-full-text,
+.energypac-sidebar-text {
     font-family: 'Poppins', sans-serif;
-    font-size: 1.8rem;     
     font-weight: 800;
     font-style: italic;
-    color: rgb(255, 255, 255);
-    letter-spacing: -0.8px;
-    line-height: 0.9;
+    color: var(--text-light);
+    letter-spacing: -0.6px;
+    display: flex;
+    align-items: baseline;
     white-space: nowrap;
     text-shadow: 0 4px 15px rgba(0,0,0,0.7);
-    display: flex;
-    margin-left: 0px;
-    align-items: baseline;   /* This is the magic for perfect alignment */
 }
 
-.reg-symbol {
+.energypac-full-text {
+    font-size: 1.8rem;
+    letter-spacing: -0.8px;
+    line-height: 0.9;
+    margin-left: 0px;
+}
+
+.energypac-sidebar-text {
+    font-size: 1.65rem;
+}
+
+.reg-symbol,
+.energypac-sidebar-text .reg {
     font-size: 1.5rem;
     font-weight: 700;
-    margin-left: 2px;
     position: relative;
-    top: -5px;               
+    top: -5px;
+    margin-left: 2px;
+    opacity: .85;
 }
-/* Main grid */
+
+.energypac-sidebar-text .reg {
+    font-size: 0.9rem;
+    font-weight: 800;
+    top: -8px;
+}
+
+.egari-subtitle {
+    display: block;
+    margin-left: 50px;
+    font-size: 1.02rem;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 4px;
+    background-color: white;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0.75;
+}
+
+/* LOGIN GRID & CARDS */
 .egari-grid {
     height: 100vh;
     display: grid;
@@ -96,12 +161,12 @@ html, body {
     gap: 6%;
 }
 
-/* CENTER-LEFT: eGari Title + Tagline */
 .egari-branding {
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
+
 .egari-title {
     font-size: 8rem;
     font-weight: 800;
@@ -113,8 +178,8 @@ html, body {
     background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: -7px;
-    
 }
+
 .egari-tagline {
     font-size: 2rem;
     font-weight: 600;
@@ -126,14 +191,14 @@ html, body {
     opacity: .90;
 }
 
-/* RIGHT: Login Card */
 .egari-login-section {
     display: flex;
     justify-content: flex-end;
     align-items: center;
 }
+
 .egari-login-card {
-    background:  #1d2b42;
+    background: var(--card-bg);
     width: 460px;
     min-height: 620px;
     padding: 85px 60px;
@@ -141,12 +206,14 @@ html, body {
     margin-right: 80px;
     text-align: center;
 }
+
 .egari-login-card h2 {
     font-size: 2rem;
     font-weight: 700;
-    color: hsl(0, 0%, 100%);
+    color: var(--text-light);
     margin-bottom: 3.4rem;
 }
+
 .egari-input {
     width: 100%;
     height: 68px;
@@ -156,15 +223,16 @@ html, body {
     padding: 0 28px;
     font-size: 1.15rem;
     margin-bottom: 1.6rem;
-    transition: all 0.3s;
+    transition: all var(--transition-speed);
 }
+
 .egari-input:focus {
     outline: none;
     background: white;
     box-shadow: 0 0 0 5px rgba(0, 191, 255, 0.25);
 }
+
 .egari-btn {
-   
     width: 100%;
     height: 68px;
     border-radius: 24px;
@@ -177,205 +245,70 @@ html, body {
     transition: all 0.4s;
     margin-top: 1rem;
 }
+
 .egari-btn:hover {
     transform: translateY(-7px);
-    box-shadow: 0 30px 60px #1d2b42 ;
-}
-
-/* RESPONSIVE — PERFECT EVERYWHERE */
-@media (max-width: 1100px) {
-    .egari-grid { grid-template-columns: 1fr 460px; gap: 4%; }
-    .egari-title { font-size: 9.5rem; }
-}
-@media (max-width: 992px) {
-    .egari-grid {
-        grid-template-columns: 1fr;
-        text-align: center;
-        padding: 10% 8%;
-    }
-    .egari-branding { order: 2; margin-top: 2rem; }
-    .egari-login-section { order: 1; justify-content: center; }
-    .egari-title { font-size: 8.5rem; }
-    .egari-top-left { left: 50%; transform: translateX(-50%); }
-}
-@media (max-width: 576px) {
-    .egari-title { font-size: 6.2rem; letter-spacing: -4px; }
-    .egari-tagline { font-size: 2rem; margin-top: 2.5rem; }
-    .energypac-logo { height: 42px; }
-    .energypac-text { font-size: 1.6rem; }
-    .egari-login-card { width: 94%; min-height: 580px; padding: 70px 35px; border-radius: 40px; }
-}
-
-
-
-
-/* ============================================= */
-/*               CUSTOM VARIABLES                */
-/* ============================================= */
-:root {
-    --header-height: 75px;
-    --profile-img-size: 52px;
-    --sidebar-width: 230px;
-    --sidebar-collapsed: 80px;
-    --primary-green: lch(34.52% 73.46 294.44 / 0.795);
-}
-
-@media (max-width: 992px) {
-    :root {
-        --header-height: 80px;
-        --profile-img-size: 48px;
-    }
+    box-shadow: 0 30px 60px var(--sidebar-bg);
 }
 
 /* ============================================= */
-/*               PAGE TITLE IN HEADER            */
+/*              LAYOUT STRUCTURE                 */
 /* ============================================= */
-.page-title {
-    font-size: 1.65rem;
-    font-weight: 600;
-    color: oklch(100% 0.00011 271.152);
-    letter-spacing: 0.8px;
-    text-transform: capitalize;
-    padding-left: 1.5rem;
 
-}
-
-.page-title::before {
-    content: "";
-    display: inline-block;
-    width: 6px;
-    height: 32px;
-    
-    background: var(--primary-green);
-    border-radius: 4px;
-    margin-right: 14px;
-    vertical-align: middle;
-}
-
-@media (max-width: 992px) {
-    .page-title { font-size: 1.35rem; padding-left: 1rem; }
-    .page-title::before { height: 26px; }
-}
-
-/* ============================================= */
-/*                   LAYOUT                      */
-/* ============================================= */
 .app-container {
     display: flex;
     min-height: 100vh;
 }
 
+.main-content-area {
+    margin-left: var(--sidebar-width);
+    padding-top: var(--header-height);
+    min-height: 100vh;
+    flex-grow: 1;
+    transition: margin-left var(--transition-speed);
+}
+
 /* ============================================= */
-/*                   SIDEBAR                     */
+/*                 SIDEBAR                       */
 /* ============================================= */
+
 .sidebar {
     width: var(--sidebar-width);
-    background: #1d2b42 ;
+    background: var(--sidebar-bg);
     color: white;
     position: fixed;
-    top: 0; left: 0;
+    top: 0;
+    left: 0;
     height: 100vh;
     z-index: 1000;
     display: flex;
     flex-direction: column;
     box-shadow: 5px 0 15px rgba(0,0,0,0.2);
-    transition: width 0.3s ease;
+    transition: width var(--transition-speed);
 }
 
-
-/* SIDEBAR ENERGYPAC LOGO — EXACT SAME AS LOGIN PAGE */
 .sidebar-brand {
     padding: 0.85rem 1rem 0.30rem 1.5rem;
     text-align: left;
-  
-    
     backdrop-filter: blur(10px);
 }
 
-.sidebar-energypac-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: -6px;
+.sidebar-nav {
+    flex-grow: 1;
+    padding: .5rem;
 }
 
-.energypac-sidebar-icon {
-    height: 22px;
-    width: auto;
-    filter: drop-shadow(0 3px 10px rgba(0,0,0,0.6));
+.sidebar-footer {
+    padding: .1rem;
+    border-top: 1px solid #334155;
 }
-
-.energypac-sidebar-text {
-    font-family: 'Poppins', sans-serif;
-  
-    font-size: 1.65rem;
-    font-weight: 700;
-    font-style: italic;
-    color: white;
-    letter-spacing: -0.6px;
- 
-    display: flex;
-    align-items: baseline;
-}
-
-.energypac-sidebar-text .reg {
-    font-size: 0.9rem;
-    font-weight: 800;
-    position: relative;
-    top: -8px;
-    margin-left: 2px;
-    opacity: .85;
-}
-
-/* eGari subtitle — premium glow */
-.egari-subtitle {
-    display: block;
-    
-    margin-left: 50px;                   
-    font-size: 1.02rem;
-    font-weight: 700;
-    font-style: italic;
-    letter-spacing: 4px;
-    background-color: white;
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  
-    opacity: 0.75;
-}
-
-
-.sidebar-nav { flex-grow: 1; padding: .5rem;  }
-
-.sidebar-footer {  padding: .1rem; border-top: 1px solid #334155; }
-
-.logout-btn {
-    display: flex !important;
-    align-items: center;
-      /* ← TEXT LEFT, ICON RIGHT */
-    padding: 1.5rem 3rem !important;
-    border-radius: 40px!important;
-     outline: solid #ffffff;
-    
-    width: 100%;
-    color: hsl(0, 0%, 100%) !important;        /* your custom text color */
-    transition: all 0.4s ease;
-}
-
-.logout-btn i {
-    font-size: 1.4rem;
-   
-    color: hsl(0, 0%, 100%) !important;
-}
-
-
 
 .sidebar .nav-link {
-     border-bottom: .2px solid hwb(0 100% 0%);
+    border-bottom: .2px solid hwb(0 100% 0%);
     padding: 1.8rem .5rem;
     margin: 1.2rem 0.8rem;
     border-radius: 40px;
-    color: hsl(0, 0%, 100%);
+    color: var(--text-light);
     text-decoration: none;
     display: flex;
     align-items: center;
@@ -386,8 +319,11 @@ html, body {
     font-size: 1rem;
 }
 
-.sidebar .nav-link i { font-size: 1.3rem; width: 30px; text-align: center; }
-
+.sidebar .nav-link i {
+    font-size: 1.3rem;
+    width: 30px;
+    text-align: center;
+}
 
 .sidebar .nav-link:hover {
     background: lab(59.6% 1.89 -30.05);
@@ -400,10 +336,66 @@ html, body {
     font-weight: 650;
 }
 
-/* ========= USER PROFILE DROPDOWN IN TOP HEADER  ========= */
+.logout-btn {
+    display: flex !important;
+    align-items: center;
+    padding: 1.5rem 3rem !important;
+    border-radius: 40px !important;
+    outline: solid #ffffff;
+    width: 100%;
+    color: var(--text-light) !important;
+    transition: all 0.4s ease;
+}
+
+.logout-btn i {
+    font-size: 1.4rem;
+    color: var(--text-light) !important;
+}
+
+/* ============================================= */
+/*                 TOP HEADER                    */
+/* ============================================= */
+
+.top-header {
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width);
+    right: 0;
+    height: var(--header-height);
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 2px 15px rgba(0,0,0,0.15);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: space-between !important;
+    padding: 0 2rem !important;
+    transition: left var(--transition-speed);
+}
+
+.page-title {
+    font-size: 1.65rem;
+    font-weight: 600;
+    color: oklch(100% 0.00011 271.152);
+    letter-spacing: 0.8px;
+    text-transform: capitalize;
+    padding-left: 1.5rem;
+}
+
+.page-title::before {
+    content: "";
+    display: inline-block;
+    width: 6px;
+    height: 32px;
+    background: var(--primary-green);
+    border-radius: 4px;
+    margin-right: 14px;
+    vertical-align: middle;
+}
+
+/* USER DROPDOWN */
 .user-dropdown {
     position: relative;
-    
 }
 
 .user-dropdown .dropdown-toggle {
@@ -412,26 +404,24 @@ html, body {
     gap: 14px;
     padding: 8px 12px;
     border-radius: 16px;
-    transition: all 0.3s ease;
+    transition: all var(--transition-speed);
     text-decoration: none !important;
-
     backdrop-filter: blur(10px);
- 
 }
 
-.user-dropdown .user-dropdown .dropdown-toggle:hover {
+.user-dropdown .dropdown-toggle:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    box-shadow: var(--shadow-dark);
 }
 
 .profile-img {
-    width: 52px;
-    height: 52px;
+    width: var(--profile-img-size);
+    height: var(--profile-img-size);
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    box-shadow: var(--shadow-dark);
 }
 
 .profile-info {
@@ -442,21 +432,18 @@ html, body {
 .user-name {
     font-weight: 700;
     font-size: 1rem;
-    color: #ffffff;
+    color: var(--text-light);
     letter-spacing: 0.5px;
     text-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 
 .user-role {
     font-size: 0.82rem;
-    color: #e0e7ff;
+    color: var(--text-muted);
     font-weight: 500;
     opacity: 0.9;
 }
 
-
-
-/* Dropdown menu */
 .user-dropdown .dropdown-menu {
     border: none;
     border-radius: 20px;
@@ -475,65 +462,36 @@ html, body {
     background: hsl(236, 64%, 14%);
     color: white;
 }
+
 .dropdown-toggle i {
     font-size: 0.9rem;
-    transition: transform 0.3s ease;
+    transition: transform var(--transition-speed);
 }
 
-/* Arrow rotates when dropdown opens */
 .dropdown-toggle[aria-expanded="true"] i {
     transform: rotate(180deg);
 }
 
 /* ============================================= */
-/*              MAIN CONTENT & HEADER            */
-/* ============================================= */
-.main-content-area {
-    margin-left: var(--sidebar-width);
-    padding-top: var(--header-height);
-    min-height: 100vh;
-    flex-grow: 1;
-    transition: margin-left 0.3s ease;
-}
-
-.top-header {
-    position: fixed;
-    top: 0;
-    left: var(--sidebar-width);
-    right: 0;
-    height: var(--header-height);
-    background: #1d2b42 ;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    box-shadow: 0 2px 15px rgba(0,0,0,0.15);
-    z-index: 999;
-    display: flex;
-    align-items: center;
-    justify-content: space-between !important;   /* CHANGED FROM flex-end */
-    padding: 0 2rem !important;
-    transition: left 0.3s ease;
-}
-
-/* User dropdown */
-.user-dropdown .dropdown-toggle { display: flex; align-items: center; gap: 14px; color: #e2e8f0; }
-.user-dropdown .dropdown-toggle::after { display: none; }
-.profile-img { width: var(--profile-img-size); height: var(--profile-img-size); border-radius: 50%; object-fit: cover; }
-.user-name { font-weight: 600; color: hsl(208, 33%, 91%); }
-.user-role { font-size: 0.85rem; color: hsl(208, 20%, 70%); }
-
-/* ============================================= */
 /*               PAGE CONTENT                    */
 /* ============================================= */
-.page-content { flex-grow: 1; background: #f8f9fa; padding: 2rem 2.5rem; }
 
-/* ============================================= */
-/*             DRIVERS PAGE – CLEAN              */
-/* ============================================= */
-.page-wrapper { background: #f8f9fa; }
+.page-wrapper {
+    background: #f8f9fa;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.page-content {
+    flex-grow: 1;
+    background: #f8f9fa;
+    padding: 2rem 2.5rem;
+}
 
 .content-card {
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-light);
     overflow: hidden;
     margin-top: 0rem;
 }
@@ -549,6 +507,95 @@ html, body {
     gap: 1rem;
 }
 
+/* ============================================= */
+/*               TABLE STYLES                    */
+/* ============================================= */
+
+.data-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 0;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.data-table thead th {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 1.2rem 1rem;
+    border: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.data-table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.data-table tbody tr:hover {
+    background: #f8fafc;
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.data-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.data-table tbody td {
+    padding: 1rem 1rem;
+    vertical-align: middle;
+    border: none;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+/* Zebra striping */
+.zebra-table tbody tr:nth-child(odd) {
+    background: #ffffff !important;
+}
+
+.zebra-table tbody tr:nth-child(even) {
+    background: hsl(0, 2%, 58%) !important;
+}
+
+.zebra-table tbody tr:nth-child(odd):hover {
+    background: #f1f5f9 !important;
+}
+
+.zebra-table tbody tr:nth-child(even):hover {
+    background: #e8e8e8 !important;
+}
+
+.table tbody tr:nth-child(odd) {
+    background: #ffffff !important;
+}
+
+.table tbody tr:nth-child(even) {
+    background: #f5f5f5 !important;
+}
+
+.table tbody tr:nth-child(odd):hover {
+    background: #f1f5f9 !important;
+}
+
+.table tbody tr:nth-child(even):hover {
+    background: #e8e8e8 !important;
+}
+
+/* ============================================= */
+/*               FORM ELEMENTS                   */
+/* ============================================= */
+
 .search-input-group {
     max-width: 480px;
     height: 52px;
@@ -557,7 +604,7 @@ html, body {
     overflow: hidden;
     background: white;
     box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    transition: all 0.3s ease;
+    transition: all var(--transition-speed);
 }
 
 .search-input-group:focus-within {
@@ -565,18 +612,41 @@ html, body {
     box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
 }
 
-.search-input-group .form-control { border: none !important; height: 100%; font-size: 1rem; padding: 0 1rem; }
+.search-input-group .form-control {
+    border: none !important;
+    height: 100%;
+    font-size: 1rem;
+    padding: 0 1rem;
+}
+
 .search-input-group .input-group-text,
-.search-input-group .btn { border: none; background: white; }
-.search-input-group .btn-primary { background: #6366f1; color: white; padding: 0 1.4rem; }
-.search-input-group .btn-primary:hover { background: #4f46e5; }
+.search-input-group .btn {
+    border: none;
+    background: white;
+}
+
+.search-input-group .btn-primary {
+    background: #6366f1;
+    color: white;
+    padding: 0 1.4rem;
+}
+
+.search-input-group .btn-primary:hover {
+    background: #4f46e5;
+}
+
+/* ============================================= */
+/*               BUTTON STYLES                   */
+/* ============================================= */
 
 .btn-clear-search {
     border-radius: 50% !important;
-    width: 40px; height: 40px;
-    display: flex; align-items: center; justify-content: center;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-left: 0.8rem;
-    
     border: 2px solid #ef4444 !important;
     color: #ef4444;
     padding: 0;
@@ -595,141 +665,6 @@ html, body {
     font-weight: 600;
 }
 
-.data-table thead th {
-    background: #1e293b;
-    color: white;
-    font-size: 0.82rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    padding: 1rem 0.8rem;
-}
-
-.code {
-    background: #f1f5f9;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-}
-
-.status-badge {
-    padding: 6px 16px;
-    border-radius: 50px;
-    font-weight: 600;
-    font-size: 0.84rem;
-}
-.status-active { background: #d1fae5; color: #065f46; }
-.status-inactive { background: #fee2e2; color: #991b1b; }
-
-/* ============================================= */
-/*                 RESPONSIVE                    */
-/* ============================================= */
-@media (max-width: 992px) {
-    .sidebar { width: var(--sidebar-collapsed); }
-    .sidebar .nav-link { justify-content: center; padding: 1rem; margin: 0.4rem; }
-    .sidebar .nav-link span { display: none; }
-    .sidebar .nav-link i { font-size: 1.5rem; }
-    .main-content-area, .top-header { margin-left: var(--sidebar-collapsed); left: var(--sidebar-collapsed); }
-}
-
-main { flex-grow: 1; }
-html { scroll-behavior: smooth; }
-
-/* VEHICLE STATUS BADGES — CONSISTENT WITH DRIVERS */
-
-
-.status-available   { background: #d1fae5; color: hwb(161 5% 55%); }
-.status-booked      { background: #fee2e2; color: hwb(0 20% 24%); }
-.status-reserved    { background: #dbeafe; color: hwb(246 26% 16%); }
-.status-maintenance { background: #fef3c7; color: hwb(23 18% 34%); }
-.status-out         { background: #1e293b; color: #e2e8f0; }
-.status-cancelled   { background: #f3f4f6; color: #374151; }
-
-
-/* DASHBOARD STATS CARDS */
-.stats-card {
-    border-radius: 16px;
-    padding: 1rem;
-    color: white;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
-}
-.stats-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.25); }
-.bg-gradient-primary { background: linear-gradient(135deg, hwb(240 13% 69%), #4f46e5); }
-.bg-gradient-success { background: linear-gradient(135deg, hwb(158 3% 80%), hsl(161, 56%, 41%)); }
-.bg-gradient-warning { background: linear-gradient(135deg, hwb(38 8% 66%), #d97706); }
-.bg-gradient-info { background: linear-gradient(135deg, hwb(200 11% 75%), #0284c7); }
-.text-success-light { color: #86efac !important; }
-.text-warning-light { color: #fde68a !important; }
-
-
-
-/* ============================================= */
-/*           CONSISTENT PAGE SPACING             */
-/* ============================================= */
-
-/* Consistent spacing for all admin pages */
-.page-wrapper {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-}
-
-/* Ensure consistent header positioning */
-.main-content-area {
-    padding-top: var(--header-height) !important;
-}
-
-/* Remove any conflicting margins */
-.content-card {
-    margin-top: 0 !important;
-}
-
-/* ============================================= */
-/*           SIDEBAR POSITIONING FIX             */
-/* ============================================= */
-
-/* Ensure sidebar stays fixed and consistent */
-.sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    height: 100vh !important;
-    z-index: 1000 !important;
-}
-
-/* Prevent any content from affecting sidebar position */
-.app-container {
-    display: flex;
-    min-height: 100vh;
-    position: relative;
-}
-
-/* ============================================= */
-/*           MODAL FIXES - MINIMAL              */
-/* ============================================= */
-
-/* Simple modal width fix */
-.modal-dialog.modal-lg {
-    max-width: 900px;
-}
-
-/* Responsive – keeps modals nice on small screens */
-@media (max-width: 575px) {
-    .modal-dialog {
-        margin: 1rem !important;
-    }
-    .modal-dialog.modal-lg {
-        max-width: 95vw !important;  /* Responsive on small screens */
-    }
-}
-
-
-/* ============================================= */
-/*     EMPLOYEE PAGES — 100% ADMIN CONSISTENT    */
-/*     Same cards, table, buttons, spacing       */
-/* ============================================= */
-
-/* Same button as admin "Add" buttons */
 .btn-primary-gradient {
     background: linear-gradient(90deg, #22d3ee, #3b82f6) !important;
     border: none !important;
@@ -738,7 +673,7 @@ html { scroll-behavior: smooth; }
     border-radius: 12px !important;
     padding: 0.75rem 1.5rem !important;
     box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3) !important;
-    transition: all 0.3s ease !important;
+    transition: all var(--transition-speed) !important;
 }
 
 .btn-primary-gradient:hover {
@@ -746,16 +681,251 @@ html { scroll-behavior: smooth; }
     box-shadow: 0 20px 40px rgba(59, 130, 246, 0.5) !important;
 }
 
-/* Same card lift effect as admin */
-.hover-lift {
-    transition: all 0.3s ease;
+/* ============================================= */
+/*               STATUS BADGES                   */
+/* ============================================= */
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
 }
+
+.status-active { background: #d1fae5; color: #065f46; }
+.status-inactive { background: #fee2e2; color: #991b1b; }
+.status-available { background: #d1fae5; color: hwb(161 5% 55%); }
+.status-booked { background: #fee2e2; color: hwb(0 20% 24%); }
+.status-reserved { background: #dbeafe; color: hwb(246 26% 16%); }
+.status-maintenance { background: #fef3c7; color: hwb(23 18% 34%); }
+.status-out { background: #1e293b; color: #e2e8f0; }
+.status-cancelled { background: #f3f4f6; color: #374151; }
+
+/* ============================================= */
+/*               DASHBOARD CARDS                 */
+/* ============================================= */
+
+.stats-card {
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    color: white;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    transition: all var(--transition-speed);
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+}
+
+.hover-lift {
+    transition: all var(--transition-speed);
+}
+
 .hover-lift:hover {
     transform: translateY(-8px);
     box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
 }
 
-/* Priority column hidden for employees */
+/* Background Gradients */
+.bg-gradient-primary { background: linear-gradient(135deg, hwb(240 13% 69%), #4f46e5); }
+.bg-gradient-success { background: linear-gradient(135deg, hwb(158 3% 80%), hsl(161, 56%, 41%)); }
+.bg-gradient-warning { background: linear-gradient(135deg, hwb(38 8% 66%), #d97706); }
+.bg-gradient-info { background: linear-gradient(135deg, hwb(200 11% 75%), #0284c7); }
+
+.text-success-light { color: #86efac !important; }
+.text-warning-light { color: #fde68a !important; }
+
+/* ============================================= */
+/*               UTILITY CLASSES                 */
+/* ============================================= */
+
+.code {
+    background: #f1f5f9;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #475569;
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-weight: 500;
+}
+
+.data-table tbody td strong {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+/* Table action buttons */
+.data-table .btn {
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.data-table .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Empty state */
+.data-table tbody tr td[colspan] {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.data-table tbody tr td[colspan] i {
+    font-size: 3rem;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* ============================================= */
+/*               RESPONSIVE DESIGN               */
+/* ============================================= */
+
+@media (max-width: 1100px) {
+    .egari-grid {
+        grid-template-columns: 1fr 460px;
+        gap: 4%;
+    }
+    
+    .egari-title {
+        font-size: 9.5rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .sidebar {
+        width: var(--sidebar-collapsed);
+    }
+    
+    .sidebar .nav-link {
+        justify-content: center;
+        padding: 1rem;
+        margin: 0.4rem;
+    }
+    
+    .sidebar .nav-link span {
+        display: none;
+    }
+    
+    .sidebar .nav-link i {
+        font-size: 1.5rem;
+    }
+    
+    .main-content-area,
+    .top-header {
+        margin-left: var(--sidebar-collapsed);
+        left: var(--sidebar-collapsed);
+    }
+    
+    .egari-grid {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 10% 8%;
+    }
+    
+    .egari-branding {
+        order: 2;
+        margin-top: 2rem;
+    }
+    
+    .egari-login-section {
+        order: 1;
+        justify-content: center;
+    }
+    
+    .egari-title {
+        font-size: 8.5rem;
+    }
+    
+    .page-title {
+        font-size: 1.35rem;
+        padding-left: 1rem;
+    }
+    
+    .page-title::before {
+        height: 26px;
+    }
+}
+
+@media (max-width: 768px) {
+    .data-table thead th,
+    .data-table tbody td {
+        padding: 0.8rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    .data-table .btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+    }
+    
+    .status-badge {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .egari-title {
+        font-size: 6.2rem;
+        letter-spacing: -4px;
+    }
+    
+    .egari-tagline {
+        font-size: 2rem;
+        margin-top: 2.5rem;
+    }
+    
+    .egari-login-card {
+        width: 94%;
+        min-height: 580px;
+        padding: 70px 35px;
+        border-radius: 40px;
+    }
+    
+    .modal-dialog {
+        margin: 1rem !important;
+    }
+    
+    .modal-dialog.modal-lg {
+        max-width: 95vw !important;
+    }
+}
+
+/* ============================================= */
+/*               MODAL STYLES                    */
+/* ============================================= */
+
+.modal-dialog.modal-lg {
+    max-width: 900px;
+}
+
+/* ============================================= */
+/*               PAGE SPECIFIC                   */
+/* ============================================= */
+
+/* Employee page specific */
 .zebra-table .d-none {
     display: none !important;
+}
+
+.data-table.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }

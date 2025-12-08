@@ -57,7 +57,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'vpms_db',
         'USER': 'root',
-        'PASSWORD': '',  # Leave empty if no password
+        'PASSWORD': '',  
         'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
