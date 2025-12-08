@@ -217,7 +217,7 @@ html, body {
     --profile-img-size: 52px;
     --sidebar-width: 230px;
     --sidebar-collapsed: 80px;
-    --primary-green: lch(42.53% 92.45 296.12 / 0.795);
+    --primary-green: lch(34.52% 73.46 294.44 / 0.795);
 }
 
 @media (max-width: 992px) {

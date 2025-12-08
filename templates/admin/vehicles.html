@@ -48,7 +48,7 @@
                 </div>
 
                 <!-- ADD VEHICLE BUTTON -->
-                <button class="btn btn-success btn-add" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
+                <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addVehicleModal">
                     <i class="bi bi-plus-lg me-2"></i>Add Vehicle
                 </button>
             </div>
@@ -88,7 +88,7 @@
             <br>
             <small class="text-muted"><i class="bi bi-exclude"></i> Previously assigned</small>
         {% else %}
-            <span class="badge bg-success">
+            <span class="badge bg-primary">
                 {{ v.assigned_driver.name }}
             </span>
         {% endif %}
@@ -122,7 +122,7 @@
                         </td>
                         <td class="text-center">
                             <button class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#editVehicle{{ v.id }}">
-                                <i class="bi bi-pencil"></i>
+                                <i class="bi bi-pencil"></i> Edit
                             </button>
                         </td>
                     </tr>
@@ -207,7 +207,7 @@
         <form method="post" action="{% url 'admin_vehicles' %}">
             {% csrf_token %}
             <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-success text-white">
+                <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Add New Vehicle</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
@@ -240,7 +240,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">Add Vehicle</button>
+                    <button type="submit" class="btn btn-primary">Add Vehicle</button>
                 </div>
             </div>
         </form>
