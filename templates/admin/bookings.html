@@ -20,7 +20,7 @@
             </form>
         </div>
 
-        <div class="table-responsive">
+ <div class="table-responsive">
             <table class="table data-table align-middle">
                 <thead>
                     <tr>
@@ -45,7 +45,7 @@
                             <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
                         </td>
                         <td>{{ b.destination|default:"—" }}</td>
-                        <td><small>{{ b.start_time|date:"M j, Y H:i" }} → {{ b.end_time|date:"H:i"|default:"—" }}</small></td>
+                        <td><small>{{ b.start_time|date:"M j, Y H:i" }} → {{ b.end_time|date:"M j, Y H:i"|default:"—" }}</small></td>
                         <td>
                             <span class="badge rounded-pill px-3 {% if b.priority == 5 %}bg-danger text-white{% elif b.priority == 4 %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %}">
                                 {{ b.get_priority_display }}

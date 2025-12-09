@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     
     path('', include('pool_app.urls')),
+    path('', include('django.contrib.auth.urls')),
 ]
 
 if settings.DEBUG:

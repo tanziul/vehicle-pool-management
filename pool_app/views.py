@@ -11,6 +11,24 @@ from .models import User, Driver, Vehicle, Booking, TripReport
 from .forms import BookingForm, TripReportForm
 
 
+
+@login_required
+def profile(request):
+    user = request.user
+    
+    context = {
+        'total_bookings_made': user.bookings_made.count(),
+        'pending_bookings_made': user.bookings_made.filter(status='Pending').count(),
+        'completed_bookings_made': user.bookings_made.filter(status='Completed').count(),
+        'recent_bookings': user.bookings_made.select_related('vehicle').order_by('-created_at')[:8],
+    }
+    
+    if user.role == 'Admin' or user.is_superuser:
+        context['bookings_approved'] = user.approved_bookings.count()
+        context['total_vehicles_managed'] = Vehicle.objects.count()
+    
+    return render(request, 'profile.html', context)
+
 # SEARCH FUNCTION — FIXED
 def search_queryset(queryset, fields, q):
     if not q:

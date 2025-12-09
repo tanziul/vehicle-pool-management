@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+    <div class="content-card profile-main-card">
+
+        <!-- Compact Profile Header -->
+        <div class="profile-header-section">
+            <div class="d-flex align-items-center gap-3">
+                <img src="{% static 'image/admin.jpg' %}" class="profile-main-avatar" alt="Profile">
+                <div>
+                    <h4 class="profile-main-name mb-1">{{ user.get_full_name|default:user.username }}</h4>
+                    <p class="profile-main-role mb-0">{{ user.get_role_display }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-body">
+            <!-- Compact Info & Stats Row -->
+            <div class="row g-4">
+                <!-- Personal Info Card -->
+                <div class="col-lg-4">
+                    <div class="profile-info-card">
+                        <h6 class="profile-section-heading mb-3">Personal Information</h6>
+                        <div class="profile-info-compact">
+                            <div class="info-row">
+                                <span class="info-label">Email</span>
+                                <span class="info-value">{{ user.email|default:"Not set" }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Username</span>
+                                <span class="info-value">{{ user.username }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Joined</span>
+                                <span class="info-value">{{ user.date_joined|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Last Login</span>
+                                <span class="info-value">{{ user.last_login|date:"M d, Y H:i"|default:"Never" }}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <a href="{% url 'password_change' %}" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-shield-lock me-1"></i> Change Password
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Card -->
+                <div class="col-lg-8">
+                    <div class="profile-stats-card">
+                        <h6 class="profile-section-heading mb-3">My Statistics</h6>
+                        <div class="profile-stats-compact">
+                            <div class="stat-row">
+                                <div class="stat-item bg-gradient-primary">
+                                    <div class="stat-number text-white">{{ total_bookings_made }}</div>
+                                    <div class="stat-label text-white opacity-90">Total Bookings</div>
+                                </div>
+                                <div class="stat-item bg-gradient-warning">
+                                    <div class="stat-number text-white">{{ pending_bookings_made }}</div>
+                                    <div class="stat-label text-white opacity-90">Pending</div>
+                                </div>
+                                <div class="stat-item bg-gradient-success">
+                                    <div class="stat-number text-white">{{ completed_bookings_made }}</div>
+                                    <div class="stat-label text-white opacity-90">Completed</div>
+                                </div>
+                                {% if user.role == 'Admin' %}
+                                <div class="stat-item bg-gradient-info">
+                                    <div class="stat-number text-white">{{ bookings_approved }}</div>
+                                    <div class="stat-label text-white opacity-90">Approved</div>
+                                </div>
+                                <div class="stat-item bg-gradient-primary">
+                                    <div class="stat-number text-white">{{ total_vehicles_managed }}</div>
+                                    <div class="stat-label text-white opacity-90">Vehicles</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="mt-4">
+                <h6 class="profile-section-heading mb-3">Recent Activity</h6>
+                <div class="table-responsive profile-activity-table">
+                    <table class="table data-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Vehicle</th>
+                                <th>Date</th>
+                                <th>Destination</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in recent_bookings %}
+                            <tr>
+                                <td><strong>{{ b.vehicle.model }}</strong><br><small class="text-muted">{{ b.vehicle.vehicle_number }}</small></td>
+                                <td>{{ b.start_time|date:"M d, Y" }}</td>
+                                <td>{{ b.destination }}</td>
+                                <td>
+                                    <span class="status-badge
+                                        {% if b.status == 'Approved' %}status-available
+                                        {% elif b.status == 'Pending' %}status-reserved
+                                        {% elif b.status == 'Rejected' %}bg-danger text-white
+                                        {% else %}status-out{% endif %}">
+                                        {{ b.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center py-4 text-muted">No bookings yet</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
