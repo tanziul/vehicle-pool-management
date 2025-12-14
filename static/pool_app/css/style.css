@@ -563,38 +563,6 @@ html, body {
     font-size: 0.9rem;
 }
 
-/* Zebra striping */
-.table.data-table.zebra-table {
-    background: transparent !important;
-}
-
-.table.data-table.zebra-table tbody tr:nth-child(odd) {
-    background: #333333 !important;
-    color: white !important;
-}
-
-.table.data-table.zebra-table tbody tr:nth-child(even) {
-    background: #555555 !important;
-    color: white !important;
-}
-
-.table.data-table.zebra-table tbody tr:nth-child(odd):hover {
-    background: #cbd5e1 !important;
-    color: #374151 !important;
-}
-
-.table.data-table.zebra-table tbody tr:nth-child(even):hover {
-    background: #94a3b8 !important;
-    color: #374151 !important;
-}
-
-.table.data-table.zebra-table tbody td {
-    color: white !important;
-}
-
-.table.data-table.zebra-table tbody td strong {
-    color: white !important;
-}
 
 /* ============================================= */
 /*               FORM ELEMENTS                   */
@@ -1099,3 +1067,24 @@ html, body {
     .profile-stats-container { padding: 0 1rem; }
     .profile-activity-table { margin: 0 1rem 2rem; }
 }
+
+/* FINAL ZEBRA STRIPING — KILLS BOOTSTRAP INLINE BACKGROUND */
+.table.data-table tbody tr,
+.table.data-table tbody tr td,
+.table.data-table tbody tr th {
+    background-color: transparent !important;
+}
+
+.table.data-table tbody tr:nth-child(odd) {
+    background-color: #ffffff !important;
+}
+
+.table.data-table tbody tr:nth-child(even) {
+    background-color: oklch(92.797% 0.00011 271.152) !important;
+}
+
+.table.data-table tbody tr:hover {
+    background-color: #e2e8f0 !important;
+}
+
+

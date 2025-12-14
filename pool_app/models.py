@@ -59,7 +59,7 @@ class Driver(models.Model):
         default='Active'
     )
 
-    # FIXED: Use string 'Vehicle' to break circular import
+    
     assigned_vehicle = models.OneToOneField(
         'Vehicle',  
         on_delete=models.SET_NULL,
@@ -128,21 +128,25 @@ class Booking(models.Model):
 
     
 
-
 class TripReport(models.Model):
-    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, related_name='trip_report')
-    start_odometer = models.PositiveIntegerField()
-    end_odometer = models.PositiveIntegerField()
-    fuel_used = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True)
-    notes = models.TextField(blank=True)
-    completed_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Trip Report for {self.booking}"
+    booking = models.OneToOneField(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name='trip_report'
+    )
+    completed_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name_plural = "Trip Reports"
+        ordering = ['-completed_at']
 
+    def save(self, *args, **kwargs):
+        if not self.completed_at:
+            self.completed_at = self.booking.end_time  # Use actual trip end time
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Trip Report - {self.booking.vehicle} - {self.booking.employee} - {self.completed_at.date()}"
 
 # AUTO-RELEASE VEHICLE AFTER END_TIME
 def _release_vehicle_after_delay(booking_id):

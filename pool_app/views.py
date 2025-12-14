@@ -1,4 +1,4 @@
-# pool_app/views.py → FULL FINAL 100% WORKING
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -8,7 +8,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from .models import User, Driver, Vehicle, Booking, TripReport
-from .forms import BookingForm, TripReportForm
+from .forms import BookingForm   
 
 
 
@@ -62,7 +62,7 @@ def login_view(request):
             login(request, user)
             return redirect('dashboard')
         messages.error(request, 'Invalid credentials.')
-    return render(request, 'login.html')
+    return render(request, 'home.html')
 
 @login_required
 def logout_view(request):
@@ -104,17 +104,13 @@ def user_bookings(request):
     return render(request, 'user/bookings.html', {'bookings': bookings})
 
 @login_required
-def user_reports(request):
-    update_expired_bookings()
-    reports = TripReport.objects.filter(booking__employee=request.user).select_related('booking__vehicle').order_by('-completed_at')
-    return render(request, 'user/reports.html', {'reports': reports})
-
-@login_required
 def request_vehicle(request, vehicle_id):
     update_expired_bookings()
     vehicle = get_object_or_404(Vehicle, id=vehicle_id, status='Available')
+    
+    form = BookingForm(request.POST or None)
+    
     if request.method == 'POST':
-        form = BookingForm(request.POST)
         if form.is_valid():
             booking = form.save(commit=False)
             booking.employee = request.user
@@ -126,11 +122,17 @@ def request_vehicle(request, vehicle_id):
             vehicle.save()
             messages.success(request, "Request submitted successfully!")
             return redirect('user_dashboard')
-    else:
-        form = BookingForm()
-    return render(request, 'user/request_form.html', {'form': form, 'vehicle': vehicle})
+    
+    vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
+    return render(request, 'user/dashboard.html', {
+        'vehicles': vehicles,
+        'form': form,
+        'modal_vehicle_id': vehicle_id if form.is_bound and not form.is_valid() else None
+    })
 
 
+
+ 
 # ====================== ADMIN VIEWS ======================
 @login_required
 def admin_dashboard(request):
@@ -147,7 +149,8 @@ def admin_dashboard(request):
         'total_drivers': Driver.objects.count(),
         'active_drivers': Driver.objects.filter(status='Active').count(),
         'pending_requests': Booking.objects.filter(status='Pending').count(),
-        'completed_this_month': TripReport.objects.filter(completed_at__year=now.year, completed_at__month=now.month).count(),
+        'completed_this_month': TripReport.objects.filter(created_at__year=now.year, created_at__month=now.month).count(),
+        'total_completed': TripReport.objects.count(),
     }
 
     
@@ -163,7 +166,7 @@ def admin_bookings(request):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
-    
+
     bookings = Booking.objects.select_related('employee', 'vehicle', 'approved_by').all().order_by('-priority', 'start_time')
     q = request.GET.get('q', '').strip()
     if q:
@@ -171,6 +174,12 @@ def admin_bookings(request):
             'employee__first_name', 'employee__last_name', 'employee__username',
             'vehicle__model', 'vehicle__vehicle_number', 'destination', 'purpose'
         ], q)
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        if status_filter == 'Completed Trips':
+            bookings = bookings.filter(status='Completed')
+        elif status_filter in ['Pending', 'Approved']:
+            bookings = bookings.filter(status=status_filter)
     available_vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
     return render(request, 'admin/bookings.html', {'bookings': bookings, 'vehicles': available_vehicles, 'now': timezone.now()})
 
@@ -358,25 +367,42 @@ def admin_users(request):
         'ROLE_CHOICES': User.ROLE_CHOICES
     })
 
-
 @login_required
-def admin_reports(request):
-    update_expired_bookings()
-    if not (request.user.is_superuser or request.user.role == 'Admin'):
-        return redirect('dashboard')
-    reports = TripReport.objects.select_related('booking__vehicle', 'booking__employee').all().order_by('-completed_at')
+def reports(request):
+    if not request.user.is_staff:
+        messages.error(request, "Access denied.")
+        return redirect('user_bookings')
+
+    reports = TripReport.objects.select_related(
+        'booking__employee', 'booking__vehicle', 'booking__vehicle__assigned_driver'
+    ).order_by('-completed_at')
+
     q = request.GET.get('q', '').strip()
     if q:
         reports = search_queryset(reports, [
-            'booking__employee__first_name', 'booking__employee__last_name',
-            'booking__vehicle__vehicle_number', 'booking__vehicle__model'
+            'booking__employee__first_name', 'booking__employee__last_name', 'booking__employee__username',
+            'booking__vehicle__model', 'booking__vehicle__vehicle_number', 'booking__destination', 'booking__purpose'
         ], q)
-    return render(request, 'admin/reports.html', {'reports': reports})
 
+    return render(request, 'reports.html', {'reports': reports})
 
+def update_expired_bookings():
+    now = timezone.now()
+    expired = Booking.objects.filter(status='Approved', end_time__lt=now).select_related('vehicle')
+    
+    for booking in expired:
+        if booking.vehicle:
+            booking.vehicle.status = 'Available'
+            booking.vehicle.save(update_fields=['status'])
+        
+        if booking.status != 'Completed':
+            booking.status = 'Completed'
+            booking.save()
+        
+        # THIS LINE CREATES THE TRIP REPORT AUTOMATICALLY
+        TripReport.objects.get_or_create(booking=booking)
 @login_required
 def approve_booking(request, pk):
-    update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
     booking = get_object_or_404(Booking, pk=pk, status='Pending')
@@ -389,7 +415,6 @@ def approve_booking(request, pk):
         booking.vehicle.save()
         messages.success(request, "Booking approved!")
     return redirect('admin_bookings')
-
 @login_required
 def reject_booking(request, pk):
     update_expired_bookings()
@@ -402,28 +427,6 @@ def reject_booking(request, pk):
         messages.success(request, "Booking rejected.")
     return redirect('admin_bookings')
 
-@login_required
-def complete_trip(request, pk):
-    update_expired_bookings()
-    booking = get_object_or_404(Booking, pk=pk, status='Approved')
-    vehicle = booking.vehicle
-    if request.method == 'POST':
-        form = TripReportForm(request.POST)
-        if form.is_valid():
-            report = form.save(commit=False)
-            report.booking = booking
-            report.completed_at = timezone.now()
-            report.save()
-            booking.status = 'Completed'
-            booking.save()
-            if vehicle:
-                vehicle.status = 'Available'
-                vehicle.save()
-            messages.success(request, "Trip completed!")
-            return redirect('admin_bookings')
-    else:
-        form = TripReportForm()
-    return render(request, 'admin/complete_trip.html', {'form': form, 'booking': booking, 'vehicle': vehicle})
 
 @login_required
 def cancel_booking(request, pk):
@@ -437,3 +440,4 @@ def cancel_booking(request, pk):
         messages.success(request, "Booking cancelled successfully!")
         return redirect('user_bookings')
     return redirect('user_bookings')
+

@@ -100,6 +100,7 @@
                             <th>Employee</th>
                             <th>Vehicle</th>
                             <th>Destination</th>
+                            <th>Purpose</th>
                             <th>Start • End</th>
                             <th>Priority</th>
                             <th>Action</th>
@@ -111,6 +112,7 @@
                             <td><strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong></td>
                             <td><span class="badge bg-primary">{{ b.vehicle.vehicle_number }}</span></td>
                             <td>{{ b.destination|default:"—" }}</td>
+                            <td><small title="{{ b.purpose }}">{{ b.purpose|truncatechars:30|default:"—" }}</small></td>
                             <td><small>{{ b.start_time|date:"M j, H:i" }} → {{ b.end_time|date:"H:i"|default:"—" }}</small></td>
                             <td>
                                 <span class="badge {% if b.priority == 5 %}bg-danger{% elif b.priority == 4 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
@@ -151,7 +153,7 @@
                         </div>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-5 text-success">
+                            <td colspan="7" class="text-center py-5 text-success">
                                 <i class="bi bi-check2-all fs-1"></i><br>
                                 <strong>All caught up! No pending requests.</strong>
 

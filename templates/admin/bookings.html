@@ -7,17 +7,44 @@
 <div class="page-wrapper">
     <div class="content-card">
 
+        <!-- TOP ACTION BAR: SEARCH + FILTER + RESULT COUNT -->
         <div class="action-bar">
-            <form method="get" class="search-box me-auto">
-                <div class="input-group search-input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input type="text" name="q" class="form-control" placeholder="Search bookings..." value="{{ request.GET.q|default:'' }}">
-                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
-                    {% if request.GET.q %}
-                        <a href="{% url 'admin_bookings' %}" class="btn btn-clear-search btn-outline-danger btn-sm ms-2"><i class="bi bi-x-lg"></i></a>
-                    {% endif %}
+            <div class="d-flex flex-column flex-lg-row gap-3 align-items-start align-items-lg-center w-100">
+
+                <!-- SEARCH + CLEAR -->
+                <form method="get" class="search-box me-lg-auto">
+                    <div class="input-group search-input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" name="q" class="form-control"
+                               placeholder="Search bookings..."
+                               value="{{ request.GET.q|default:'' }}">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+                        {% if request.GET.q or request.GET.status %}
+                            <a href="{% url 'admin_bookings' %}" class="btn btn-clear-search btn-outline-danger btn-sm ms-2">
+                                <i class="bi bi-x-lg"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </form>
+
+                <!-- STATUS FILTER + RESULT COUNT -->
+                <div class="d-flex flex-column flex-lg-row gap-3 align-items-start align-items-lg-center">
+                    <form method="get" class="mb-0">
+                        <select name="status" class="form-select form-select-sm" style="width: 180px;" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            <option value="Completed Trips" {% if request.GET.status == 'Completed Trips' %}selected{% endif %}>Completed Trips</option>
+                            <option value="Pending" {% if request.GET.status == 'Pending' %}selected{% endif %}>Pending</option>
+                            <option value="Approved" {% if request.GET.status == 'Approved' %}selected{% endif %}>Approved</option>
+                        </select>
+                        {% if request.GET.q %}<input type="hidden" name="q" value="{{ request.GET.q }}">{% endif %}
+                    </form>
+
+                    <small class="text-muted text-nowrap">
+                        <strong>{{ bookings|length }}</strong> booking{{ bookings|length|pluralize }} found
+                        {% if request.GET.q %} for "<strong>{{ request.GET.q }}</strong>"{% endif %}
+                    </small>
                 </div>
-            </form>
+            </div>
         </div>
 
  <div class="table-responsive">
@@ -27,6 +54,7 @@
                         <th>Employee</th>
                         <th>Vehicle</th>
                         <th>Destination</th>
+                        <th>Purpose</th>
                         <th>Start • End</th>
                         <th>Priority</th>
                         <th>Status</th>
@@ -45,6 +73,7 @@
                             <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
                         </td>
                         <td>{{ b.destination|default:"—" }}</td>
+                        <td><small title="{{ b.purpose }}">{{ b.purpose|truncatechars:30|default:"—" }}</small></td>
                         <td><small>{{ b.start_time|date:"M j, Y H:i" }} → {{ b.end_time|date:"M j, Y H:i"|default:"—" }}</small></td>
                         <td>
                             <span class="badge rounded-pill px-3 {% if b.priority == 5 %}bg-danger text-white{% elif b.priority == 4 %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %}">
@@ -91,7 +120,7 @@
                         </div>
                     </div>
                     {% empty %}
-                    <tr><td colspan="7" class="text-center py-5 text-muted">No bookings found</td></tr>
+                    <tr><td colspan="8" class="text-center py-5 text-muted">No bookings found</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

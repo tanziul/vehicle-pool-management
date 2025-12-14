@@ -5,9 +5,20 @@
 
 {% block content %}
 <div class="page-wrapper">
+    {% if messages %}
+        <div class="container-fluid mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="content-card">
 
-        <!-- SAME ACTION BAR AS ADMIN -->
+        <!-- ACTION BAR -->
         <div class="action-bar">
             <div class="text-center">
                 <small class="text-muted">
@@ -16,7 +27,7 @@
             </div>
         </div>
 
-        <!-- SAME GRID + CARD STYLE AS ADMIN -->
+        <!-- VEHICLE GRID -->
         <div class="row g-4">
             {% for v in vehicles %}
             <div class="col-md-6 col-lg-4">
@@ -55,7 +66,7 @@
 
         <!-- REQUEST MODALS -->
         {% for v in vehicles %}
-        <div class="modal fade" id="requestModal{{ v.id }}" tabindex="-1">
+        <div class="modal fade" id="requestModal{{ v.id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
                 <form method="post" action="{% url 'request_vehicle' v.id %}">
                     {% csrf_token %}
@@ -65,24 +76,55 @@
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Start Time *</label>
-                                    <input name="start_time" type="datetime-local" class="form-control" required>
+                            {% if form %}
+                                {% if form.non_field_errors %}
+                                <div class="alert alert-danger mb-3">
+                                    {{ form.non_field_errors.0 }}
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">End Time *</label>
-                                    <input name="end_time" type="datetime-local" class="form-control" required>
+                                {% endif %}
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Start Time *</label>
+                                        {{ form.start_time }}
+                                        <small class="text-danger d-block">{{ form.start_time.errors.0 }}</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">End Time *</label>
+                                        {{ form.end_time }}
+                                        <small class="text-danger d-block">{{ form.end_time.errors.0 }}</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Destination *</label>
+                                        {{ form.destination }}
+                                        <small class="text-danger d-block">{{ form.destination.errors.0 }}</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Purpose *</label>
+                                        {{ form.purpose }}
+                                        <small class="text-danger d-block">{{ form.purpose.errors.0 }}</small>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Destination *</label>
-                                    <input name="destination" class="form-control" placeholder="e.g. Dhaka Office" required>
+                            {% else %}
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Start Time *</label>
+                                        <input name="start_time" type="datetime-local" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">End Time *</label>
+                                        <input name="end_time" type="datetime-local" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Destination *</label>
+                                        <input name="destination" class="form-control" placeholder="e.g. Dhaka Office" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Purpose *</label>
+                                        <input name="purpose" class="form-control" placeholder="e.g. Meeting" required>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-semibold">Purpose *</label>
-                                    <input name="purpose" class="form-control" placeholder="e.g. Meeting" required>
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -93,6 +135,16 @@
             </div>
         </div>
         {% endfor %}
+
+        <!-- AUTO OPEN MODAL ON ERROR -->
+        {% if modal_vehicle_id %}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var modal = new bootstrap.Modal(document.getElementById('requestModal{{ modal_vehicle_id }}'));
+                modal.show();
+            });
+        </script>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

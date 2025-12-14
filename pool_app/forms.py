@@ -1,6 +1,6 @@
-# pool_app/forms.py
+# pool_app/forms.py — FINAL & PERFECT
 from django import forms
-from .models import Booking, Vehicle, TripReport
+from .models import Booking, Vehicle
 
 
 class BookingForm(forms.ModelForm):
@@ -8,10 +8,28 @@ class BookingForm(forms.ModelForm):
         model = Booking
         fields = ['start_time', 'end_time', 'destination', 'purpose']
         widgets = {
-            'start_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
-            'end_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
-            'purpose': forms.Textarea(attrs={'rows': 3}),
+            'start_time': forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'class': 'form-control'},
+                format='%Y-%m-%dT%H:%M'
+            ),
+            'end_time': forms.DateTimeInput(
+                attrs={'type': 'datetime-local', 'class': 'form-control'},
+                format='%Y-%m-%dT%H:%M'
+            ),
+            'destination': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Where are you going?'}),
+            'purpose': forms.Textarea(attrs={'rows': 3, 'class': 'form-control', 'placeholder': 'Purpose of trip...'}),
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+
+        if start_time and end_time:
+            if end_time <= start_time:
+                raise forms.ValidationError("End time must be after start time.")
+
+        return cleaned_data
 
 
 class VehicleForm(forms.ModelForm):
@@ -19,27 +37,7 @@ class VehicleForm(forms.ModelForm):
         model = Vehicle
         fields = ['model', 'vehicle_number', 'capacity']
         widgets = {
-            'capacity': forms.NumberInput(attrs={'min': 1}),
+            'model': forms.TextInput(attrs={'class': 'form-control'}),
+            'vehicle_number': forms.TextInput(attrs={'class': 'form-control', 'style': 'text-transform: uppercase;'}),
+            'capacity': forms.NumberInput(attrs={'min': 1, 'class': 'form-control'}),
         }
-
-
-class TripReportForm(forms.ModelForm):
-    class Meta:
-        model = TripReport
-        fields = ['start_odometer', 'end_odometer', 'fuel_used', 'notes']
-        widgets = {
-            'start_odometer': forms.NumberInput(attrs={'min': 0}),
-            'end_odometer': forms.NumberInput(attrs={'min': 0}),
-            'fuel_used': forms.NumberInput(attrs={'step': '0.01'}),
-            'notes': forms.Textarea(attrs={'rows': 3}),
-        }
-
-    def clean(self):
-        cleaned_data = super().clean()
-        start = cleaned_data.get('start_odometer')
-        end = cleaned_data.get('end_odometer')
-
-        if start is not None and end is not None and end < start:
-            raise forms.ValidationError("End odometer must be greater than start odometer.")
-
-        return cleaned_data

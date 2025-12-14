@@ -12,7 +12,7 @@ urlpatterns = [
     path('user/', views.user_dashboard, name='user_dashboard'),
     path('user/bookings/', views.user_bookings, name='user_bookings'),
     path('user/bookings/cancel/<int:pk>/', views.cancel_booking, name='cancel_booking'),
-    path('user/reports/', views.user_reports, name='user_reports'),
+    
     path('request/<int:vehicle_id>/', views.request_vehicle, name='request_vehicle'),
 
     path('admin/', views.admin_dashboard, name='admin_dashboard'),
@@ -22,9 +22,11 @@ urlpatterns = [
     
     path('admin/drivers/', views.admin_drivers, name='admin_drivers'),
     path('admin/users/', views.admin_users, name='admin_users'),
-    path('admin/reports/', views.admin_reports, name='admin_reports'),
+
 
     path('admin/bookings/approve/<int:pk>/', views.approve_booking, name='approve_booking'),
     path('admin/bookings/reject/<int:pk>/', views.reject_booking, name='reject_booking'),
-    path('admin/bookings/complete/<int:pk>/', views.complete_trip, name='complete_trip'),
+    
+
+    path('reports/', views.reports, name='reports'),
 ]

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block page_title %}Trip Reports{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+<div class="content-card">
+
+    <!-- TOP ACTION BAR: SEARCH + RESULT COUNT -->
+    <div class="action-bar">
+        <div class="d-flex flex-column flex-lg-row gap-3 align-items-start align-items-lg-center w-100">
+
+            <!-- SEARCH + CLEAR -->
+            <form method="get" class="search-box me-lg-auto">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control"
+                           placeholder="Search reports..."
+                           value="{{ request.GET.q|default:'' }}">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
+                    {% if request.GET.q %}
+                        <a href="{% url 'reports' %}" class="btn btn-clear-search btn-outline-danger btn-sm ms-2">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+
+            <!-- RESULT COUNT -->
+            <small class="text-muted text-nowrap">
+                <strong>{{ reports|length }}</strong> report{{ reports|length|pluralize }} found
+                {% if request.GET.q %} for "<strong>{{ request.GET.q }}</strong>"{% endif %}
+            </small>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table data-table align-middle">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Vehicle</th>
+                    <th>Driver</th>
+                    <th>Trip Date</th>
+                    <th>Duration</th>
+                    <th>Destination</th>
+                    <th>Purpose</th>
+                    <th>Completed At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.booking.employee.get_full_name }}</td>
+                    <td>{{ report.booking.vehicle.model }} ({{ report.booking.vehicle.vehicle_number }})</td>
+                    <td>{{ report.booking.vehicle.assigned_driver.name|default:"Not Assigned" }}</td>
+                    <td>{{ report.booking.start_time|date:"M d, Y" }}</td>
+                    <td>{{ report.booking.start_time|timesince:report.booking.end_time }}</td>
+                    <td>{{ report.booking.destination|default:"—" }}</td>
+                    <td title="{{ report.booking.purpose }}">{{ report.booking.purpose|truncatechars:30|default:"—" }}</td>
+                    <td>{{ report.completed_at|date:"d M Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted mb-3"></i>
+                        <h5 class="text-muted">No trip reports yet</h5>
+                        <p class="text-muted">When a trip ends, it will appear here automatically.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+</div>
+{% endblock %}
