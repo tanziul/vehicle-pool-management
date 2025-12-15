@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
 
+from django.utils.timezone import localtime
 from .models import User, Driver, Vehicle, Booking, TripReport
 from .forms import BookingForm   
 
@@ -38,18 +39,30 @@ def search_queryset(queryset, fields, q):
         query |= Q(**{f"{field}__icontains": q})
     return queryset.filter(query)
 
-
 # AUTO UPDATE EXPIRED BOOKINGS
 def update_expired_bookings():
+    """Auto-release vehicles and mark bookings as completed when end_time passes"""
     now = timezone.now()
-    expired = Booking.objects.filter(status='Approved', end_time__lt=now).select_related('vehicle')
+    expired = Booking.objects.filter(
+        status='Approved', 
+        end_time__lt=now
+    ).select_related('vehicle')
+    
     for booking in expired:
         if booking.vehicle and booking.vehicle.status != 'Available':
             booking.vehicle.status = 'Available'
             booking.vehicle.save(update_fields=['status'])
+        
         if booking.status != 'Completed':
-            Booking.objects.filter(pk=booking.pk).update(status='Completed')
-
+            booking.status = 'Completed'
+            booking.save()
+        
+        # Create TripReport if it doesn't exist
+        if not hasattr(booking, 'trip_report'):
+            TripReport.objects.create(
+                booking=booking,
+                completed_at=now
+            )
 
 # ====================== AUTH ======================
 def home(request):
@@ -131,16 +144,36 @@ def request_vehicle(request, vehicle_id):
     })
 
 
-
- 
-# ====================== ADMIN VIEWS ======================
 @login_required
 def admin_dashboard(request):
     update_expired_bookings()
+    
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
     
     now = timezone.now()
+    today = now.date()
+    
+    # 1. FIX FOR "Trips This Month" - Count completed bookings in current month
+    completed_this_month = 0
+    for booking in Booking.objects.filter(status='Completed'):
+        if booking.end_time.year == now.year and booking.end_time.month == now.month:
+            completed_this_month += 1
+    
+    # 2. FIX FOR "Approved Today" - Count approved bookings today
+    import datetime
+    from django.utils.timezone import make_aware
+    
+    today_start = make_aware(datetime.datetime.combine(today, datetime.datetime.min.time()))
+    today_end = make_aware(datetime.datetime.combine(today, datetime.datetime.max.time()))
+    
+    approved_today_count = Booking.objects.filter(
+        status='Approved',
+        approved_at__isnull=False,
+        approved_at__gte=today_start,
+        approved_at__lte=today_end
+    ).count()
+    
     stats = {
         'total_vehicles': Vehicle.objects.count(),
         'available_vehicles': Vehicle.objects.filter(status='Available').count(),
@@ -149,17 +182,20 @@ def admin_dashboard(request):
         'total_drivers': Driver.objects.count(),
         'active_drivers': Driver.objects.filter(status='Active').count(),
         'pending_requests': Booking.objects.filter(status='Pending').count(),
-        'completed_this_month': TripReport.objects.filter(created_at__year=now.year, created_at__month=now.month).count(),
-        'total_completed': TripReport.objects.count(),
+        'completed_this_month': completed_this_month,
+        'approved_today': approved_today_count,
+        'total_completed': Booking.objects.filter(status='Completed').count(),
     }
-
     
     stats['inactive_drivers'] = stats['total_drivers'] - stats['active_drivers']
-
-  
-    stats['pending_bookings'] = Booking.objects.filter(status='Pending').select_related('employee', 'vehicle').order_by('-created_at')
-
+    stats['pending_bookings'] = Booking.objects.filter(
+        status='Pending'
+    ).select_related('employee', 'vehicle').order_by('-created_at')[:10]
+    
+    stats['today'] = now
+    
     return render(request, 'admin/dashboard.html', stats)
+
 
 @login_required
 def admin_bookings(request):
@@ -386,35 +422,24 @@ def reports(request):
 
     return render(request, 'reports.html', {'reports': reports})
 
-def update_expired_bookings():
-    now = timezone.now()
-    expired = Booking.objects.filter(status='Approved', end_time__lt=now).select_related('vehicle')
-    
-    for booking in expired:
-        if booking.vehicle:
-            booking.vehicle.status = 'Available'
-            booking.vehicle.save(update_fields=['status'])
-        
-        if booking.status != 'Completed':
-            booking.status = 'Completed'
-            booking.save()
-        
-        # THIS LINE CREATES THE TRIP REPORT AUTOMATICALLY
-        TripReport.objects.get_or_create(booking=booking)
+
 @login_required
 def approve_booking(request, pk):
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
     booking = get_object_or_404(Booking, pk=pk, status='Pending')
     if request.method == 'POST':
-        booking.status = 'Approved'
-        booking.approved_by = request.user
-        booking.approved_at = timezone.now()
-        booking.save()
-        booking.vehicle.status = 'Booked'
-        booking.vehicle.save()
-        messages.success(request, "Booking approved!")
-    return redirect('admin_bookings')
+        try:
+            booking.status = 'Approved'
+            booking.approved_by = request.user
+            booking.approved_at = timezone.now()
+            booking.save()
+            booking.vehicle.status = 'Booked'
+            booking.vehicle.save()
+            messages.success(request, "Booking approved!")
+        except Exception as e:
+            messages.error(request, f"Error approving booking: {e}")
+    return redirect('admin_dashboard')
 @login_required
 def reject_booking(request, pk):
     update_expired_bookings()
