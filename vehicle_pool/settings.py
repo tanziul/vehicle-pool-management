@@ -73,7 +73,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 USE_TZ = True
-TIME_ZONE = 'Asia/Dhaka'  # or your local time zone       # ← THIS IS THE FIX
+TIME_ZONE = 'Asia/Dhaka'  
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'

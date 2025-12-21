@@ -3,10 +3,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 import threading
-from django.db import models
-from django.contrib.auth.models import AbstractUser
-from django.utils import timezone
-import threading
 
 
 class User(AbstractUser):
@@ -17,7 +13,19 @@ class User(AbstractUser):
         ('Admin', 'Admin'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Employee')
-
+    profile_picture = models.ImageField(
+        upload_to='profile_pictures/',
+        null=True,
+        blank=True,
+      
+    )
+    
+    def get_profile_picture_url(self):
+        """Return profile picture URL or default avatar URL"""
+        if self.profile_picture and hasattr(self.profile_picture, 'url'):
+            return self.profile_picture.url
+        return '/static/pool_app/image/default_avatar.png'
+    
     def __str__(self):
         return self.get_full_name() or self.username
 
@@ -33,7 +41,7 @@ class Vehicle(models.Model):
     model = models.CharField(max_length=100)
     vehicle_number = models.CharField(max_length=20, unique=True)
     capacity = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='vailable')
 
     # FIXED: Use string 'Driver' to avoid circular import
     last_assigned_driver = models.ForeignKey(

@@ -1,4 +1,3 @@
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
@@ -13,21 +12,31 @@ from .forms import BookingForm
 
 
 
+
+
 @login_required
 def profile(request):
     user = request.user
-    
+
+    if request.method == 'POST':
+        if 'profile_picture' in request.FILES and (user.role == 'Admin' or user.is_superuser):
+            user.profile_picture = request.FILES['profile_picture']
+            user.save()
+            messages.success(request, "Profile picture updated successfully!")
+        return redirect('profile')
+
     context = {
         'total_bookings_made': user.bookings_made.count(),
         'pending_bookings_made': user.bookings_made.filter(status='Pending').count(),
         'completed_bookings_made': user.bookings_made.filter(status='Completed').count(),
         'recent_bookings': user.bookings_made.select_related('vehicle').order_by('-created_at')[:8],
     }
-    
+
     if user.role == 'Admin' or user.is_superuser:
         context['bookings_approved'] = user.approved_bookings.count()
         context['total_vehicles_managed'] = Vehicle.objects.count()
-    
+
+    context.update(get_notifications(request))  # Added notifications
     return render(request, 'profile.html', context)
 
 # SEARCH FUNCTION — FIXED
@@ -39,7 +48,7 @@ def search_queryset(queryset, fields, q):
         query |= Q(**{f"{field}__icontains": q})
     return queryset.filter(query)
 
-# AUTO UPDATE EXPIRED BOOKINGS
+# AUTO UPDATE EXPIRED BOOKINGS 
 def update_expired_bookings():
     """Auto-release vehicles and mark bookings as completed when end_time passes"""
     now = timezone.now()
@@ -63,6 +72,40 @@ def update_expired_bookings():
                 booking=booking,
                 completed_at=now
             )
+
+# ====================== NOTIFICATIONS ======================
+def get_notifications(request):
+    notifications = []
+    count = 0
+    
+    if request.user.is_staff:  # Admin sees pending requests
+        pending = Booking.objects.filter(status='Pending').select_related('employee', 'vehicle')[:10]
+        for b in pending:
+            notifications.append({
+                'type': 'pending',
+                'message': f"{b.employee.get_full_name() or b.employee.username} requested {b.vehicle.model}",
+                'time': localtime(b.created_at).strftime("%b %d, %H:%M"),
+                'link': '/admin/bookings/'
+            })
+        count = pending.count()
+    else:  # Employee sees approved/rejected from last 7 days
+        recent_cutoff = timezone.now() - timezone.timedelta(days=7)
+        recent = Booking.objects.filter(
+            employee=request.user,
+            status__in=['Approved', 'Rejected'],
+            approved_at__gte=recent_cutoff
+        ).select_related('vehicle')[:10]
+        for b in recent:
+            status_text = "approved" if b.status == 'Approved' else "rejected"
+            notifications.append({
+                'type': 'approved' if b.status == 'Approved' else 'rejected',
+                'message': f"Your booking for {b.vehicle.model} was {status_text}",
+                'time': localtime(b.approved_at).strftime("%b %d, %H:%M"),
+                'link': '/user/bookings/'
+            })
+        count = recent.count()
+    
+    return {'notifications': notifications, 'notification_count': count}
 
 # ====================== AUTH ======================
 def home(request):
@@ -102,8 +145,9 @@ def user_dashboard(request):
         return redirect('dashboard')
 
     vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
-
-    return render(request, 'user/dashboard.html', {'vehicles': vehicles})
+    context = {'vehicles': vehicles}
+    context.update(get_notifications(request))
+    return render(request, 'user/dashboard.html', context)
 
 @login_required
 def user_bookings(request):
@@ -114,7 +158,9 @@ def user_bookings(request):
         bookings = search_queryset(bookings, [
             'vehicle__model', 'vehicle__vehicle_number', 'destination', 'purpose'
         ], q)
-    return render(request, 'user/bookings.html', {'bookings': bookings})
+    context = {'bookings': bookings}
+    context.update(get_notifications(request))
+    return render(request, 'user/bookings.html', context)
 
 @login_required
 def request_vehicle(request, vehicle_id):
@@ -137,11 +183,13 @@ def request_vehicle(request, vehicle_id):
             return redirect('user_dashboard')
     
     vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
-    return render(request, 'user/dashboard.html', {
+    context = {
         'vehicles': vehicles,
         'form': form,
         'modal_vehicle_id': vehicle_id if form.is_bound and not form.is_valid() else None
-    })
+    }
+    context.update(get_notifications(request))
+    return render(request, 'user/dashboard.html', context)
 
 
 @login_required
@@ -154,13 +202,13 @@ def admin_dashboard(request):
     now = timezone.now()
     today = now.date()
     
-    # 1. FIX FOR "Trips This Month" - Count completed bookings in current month
+    # 1. Trips This Month - KEPT YOUR ORIGINAL LOOP (as requested)
     completed_this_month = 0
     for booking in Booking.objects.filter(status='Completed'):
         if booking.end_time.year == now.year and booking.end_time.month == now.month:
             completed_this_month += 1
     
-    # 2. FIX FOR "Approved Today" - Count approved bookings today
+    # 2. Approved Today
     import datetime
     from django.utils.timezone import make_aware
     
@@ -194,6 +242,7 @@ def admin_dashboard(request):
     
     stats['today'] = now
     
+    stats.update(get_notifications(request))  # Added notifications
     return render(request, 'admin/dashboard.html', stats)
 
 
@@ -217,7 +266,9 @@ def admin_bookings(request):
         elif status_filter in ['Pending', 'Approved']:
             bookings = bookings.filter(status=status_filter)
     available_vehicles = Vehicle.objects.filter(status='Available').select_related('assigned_driver')
-    return render(request, 'admin/bookings.html', {'bookings': bookings, 'vehicles': available_vehicles, 'now': timezone.now()})
+    context = {'bookings': bookings, 'vehicles': available_vehicles, 'now': timezone.now()}
+    context.update(get_notifications(request))
+    return render(request, 'admin/bookings.html', context)
 
 @login_required
 def admin_vehicles(request):
@@ -253,7 +304,10 @@ def admin_vehicles(request):
             messages.error(request, f"Error: {e}")
         return redirect('admin_vehicles')
 
-    return render(request, 'admin/vehicles.html', {'vehicles': vehicles, 'drivers': drivers})
+    context = {'vehicles': vehicles, 'drivers': drivers}
+    context.update(get_notifications(request))
+    return render(request, 'admin/vehicles.html', context)
+
 @login_required
 def edit_vehicle(request, pk):
     update_expired_bookings()
@@ -317,6 +371,7 @@ def edit_vehicle(request, pk):
         return redirect('admin_vehicles')
 
     return redirect('admin_vehicles')
+
 @login_required
 def admin_drivers(request):
     update_expired_bookings()
@@ -352,7 +407,9 @@ def admin_drivers(request):
         driver.save()
         messages.success(request, "Driver updated!")
 
-    return render(request, 'admin/drivers.html', {'drivers': drivers})
+    context = {'drivers': drivers}
+    context.update(get_notifications(request))
+    return render(request, 'admin/drivers.html', context)
 
 @login_required
 def admin_users(request):
@@ -375,8 +432,13 @@ def admin_users(request):
         user.role = request.POST['role']
         user.is_active = 'is_active' in request.POST
 
+        # Handle profile picture upload
+        if 'profile_picture' in request.FILES:
+            user.profile_picture = request.FILES['profile_picture']
+
         if request.POST.get('password'):
             user.set_password(request.POST['password'])
+        
         user.save()
         messages.success(request, f"User '{user.username}' updated successfully!")
         return redirect('admin_users')
@@ -393,15 +455,20 @@ def admin_users(request):
                 role=request.POST['role'],
                 is_active=True
             )
+            
+            # Handle profile picture upload
+            if 'profile_picture' in request.FILES:
+                user.profile_picture = request.FILES['profile_picture']
+                user.save()
+            
             messages.success(request, f"User '{user.username}' created successfully!")
         except Exception as e:
             messages.error(request, f"Error creating user: {e}")
         return redirect('admin_users')
 
-    return render(request, 'admin/users.html', {
-        'users': users,
-        'ROLE_CHOICES': User.ROLE_CHOICES
-    })
+    context = {'users': users, 'ROLE_CHOICES': User.ROLE_CHOICES}
+    context.update(get_notifications(request))
+    return render(request, 'admin/users.html', context)
 
 @login_required
 def reports(request):
@@ -420,8 +487,9 @@ def reports(request):
             'booking__vehicle__model', 'booking__vehicle__vehicle_number', 'booking__destination', 'booking__purpose'
         ], q)
 
-    return render(request, 'reports.html', {'reports': reports})
-
+    context = {'reports': reports}
+    context.update(get_notifications(request))
+    return render(request, 'reports.html', context)
 
 @login_required
 def approve_booking(request, pk):
@@ -436,10 +504,11 @@ def approve_booking(request, pk):
             booking.save()
             booking.vehicle.status = 'Booked'
             booking.vehicle.save()
-            messages.success(request, "Booking approved!")
+            messages.success(request, f"Booking approved for {booking.employee.get_full_name() or booking.employee.username}!")
         except Exception as e:
             messages.error(request, f"Error approving booking: {e}")
-    return redirect('admin_dashboard')
+    return redirect('admin_dashboard') 
+
 @login_required
 def reject_booking(request, pk):
     update_expired_bookings()
@@ -449,7 +518,7 @@ def reject_booking(request, pk):
         booking.save()
         booking.vehicle.status = 'Available'
         booking.vehicle.save()
-        messages.success(request, "Booking rejected.")
+        messages.success(request, f"Booking rejected for {booking.employee.get_full_name() or booking.employee.username}!")
     return redirect('admin_bookings')
 
 
@@ -465,4 +534,3 @@ def cancel_booking(request, pk):
         messages.success(request, "Booking cancelled successfully!")
         return redirect('user_bookings')
     return redirect('user_bookings')
-
