@@ -5,13 +5,9 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Q
-
 from django.utils.timezone import localtime
-from .models import User, Driver, Vehicle, Booking, TripReport
+from .models import User, Driver, Vehicle, Booking, TripReport, Notification
 from .forms import BookingForm   
-
-
-
 
 
 @login_required
@@ -77,34 +73,32 @@ def update_expired_bookings():
 def get_notifications(request):
     notifications = []
     count = 0
-    
-    if request.user.is_staff:  # Admin sees pending requests
-        pending = Booking.objects.filter(status='Pending').select_related('employee', 'vehicle')[:10]
-        for b in pending:
-            notifications.append({
-                'type': 'pending',
-                'message': f"{b.employee.get_full_name() or b.employee.username} requested {b.vehicle.model}",
-                'time': localtime(b.created_at).strftime("%b %d, %H:%M"),
-                'link': '/admin/bookings/'
-            })
-        count = pending.count()
-    else:  # Employee sees approved/rejected from last 7 days
-        recent_cutoff = timezone.now() - timezone.timedelta(days=7)
-        recent = Booking.objects.filter(
-            employee=request.user,
-            status__in=['Approved', 'Rejected'],
-            approved_at__gte=recent_cutoff
-        ).select_related('vehicle')[:10]
-        for b in recent:
-            status_text = "approved" if b.status == 'Approved' else "rejected"
-            notifications.append({
-                'type': 'approved' if b.status == 'Approved' else 'rejected',
-                'message': f"Your booking for {b.vehicle.model} was {status_text}",
-                'time': localtime(b.approved_at).strftime("%b %d, %H:%M"),
-                'link': '/user/bookings/'
-            })
-        count = recent.count()
-    
+
+    unread_notifications = Notification.objects.filter(
+        user=request.user,
+        read=False
+    ).select_related('booking__employee', 'booking__vehicle')[:10]
+
+    for notif in unread_notifications:
+        if notif.type == 'pending':
+            message = f"{notif.booking.employee.get_full_name() or notif.booking.employee.username} requested {notif.booking.vehicle.model}"
+            link = '/admin/bookings/'
+        elif notif.type == 'approved':
+            message = f"Your booking for {notif.booking.vehicle.model} was approved"
+            link = '/user/bookings/'
+        elif notif.type == 'rejected':
+            message = f"Your booking for {notif.booking.vehicle.model} was rejected"
+            link = '/user/bookings/'
+
+        notifications.append({
+            'type': notif.type,
+            'message': message,
+            'time': localtime(notif.created_at).strftime("%b %d, %H:%M"),
+            'link': link
+        })
+
+    count = unread_notifications.count()
+
     return {'notifications': notifications, 'notification_count': count}
 
 # ====================== AUTH ======================
@@ -152,6 +146,14 @@ def user_dashboard(request):
 @login_required
 def user_bookings(request):
     update_expired_bookings()
+
+    # Mark approved/rejected notifications as read for this user
+    Notification.objects.filter(
+        user=request.user,
+        type__in=['approved', 'rejected'],
+        read=False
+    ).update(read=True)
+
     bookings = Booking.objects.filter(employee=request.user).select_related('vehicle').order_by('-created_at')
     q = request.GET.get('q', '').strip()
     if q:
@@ -251,6 +253,13 @@ def admin_bookings(request):
     update_expired_bookings()
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
+
+    # Mark pending notifications as read for this admin
+    Notification.objects.filter(
+        user=request.user,
+        type='pending',
+        read=False
+    ).update(read=True)
 
     bookings = Booking.objects.select_related('employee', 'vehicle', 'approved_by').all().order_by('-priority', 'start_time')
     q = request.GET.get('q', '').strip()

@@ -43,7 +43,7 @@ class Vehicle(models.Model):
     capacity = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='vailable')
 
-    # FIXED: Use string 'Driver' to avoid circular import
+    
     last_assigned_driver = models.ForeignKey(
         'Driver',
         on_delete=models.SET_NULL,
@@ -116,23 +116,52 @@ class Booking(models.Model):
         ONLY set vehicle to 'Booked' when status CHANGES TO 'Approved'
         Never touch vehicle when status becomes 'Completed'
         """
-       
+
         if self.pk:
             try:
                 old = Booking.objects.get(pk=self.pk)
                 becoming_approved = (old.status != 'Approved' and self.status == 'Approved')
+                becoming_rejected = (old.status != 'Rejected' and self.status == 'Rejected')
+                becoming_pending = (old.status != 'Pending' and self.status == 'Pending')
             except Booking.DoesNotExist:
                 becoming_approved = (self.status == 'Approved')
+                becoming_rejected = (self.status == 'Rejected')
+                becoming_pending = (self.status == 'Pending')
         else:
             becoming_approved = (self.status == 'Approved')
+            becoming_rejected = (self.status == 'Rejected')
+            becoming_pending = (self.status == 'Pending')
 
-       
         if becoming_approved and self.vehicle:
             if self.vehicle.status != 'Booked':
                 self.vehicle.status = 'Booked'
                 self.vehicle.save(update_fields=['status'])
 
         super().save(*args, **kwargs)
+
+        # Notifications after saving
+        if becoming_pending:
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            admins = User.objects.filter(is_staff=True)
+            for admin in admins:
+                Notification.objects.create(
+                    user=admin,
+                    booking=self,
+                    type='pending'
+                )
+        elif becoming_approved:
+            Notification.objects.create(
+                user=self.employee,
+                booking=self,
+                type='approved'
+            )
+        elif becoming_rejected:
+            Notification.objects.create(
+                user=self.employee,
+                booking=self,
+                type='rejected'
+            )
 
     
 
@@ -150,11 +179,31 @@ class TripReport(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.completed_at:
-            self.completed_at = self.booking.end_time  # Use actual trip end time
+            self.completed_at = self.booking.end_time
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Trip Report - {self.booking.vehicle} - {self.booking.employee} - {self.completed_at.date()}"
+
+
+class Notification(models.Model):
+    TYPE_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.type} notification for {self.user.username} - {self.booking.vehicle}"
 
 # AUTO-RELEASE VEHICLE AFTER END_TIME
 def _release_vehicle_after_delay(booking_id):

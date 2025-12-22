@@ -1,5 +1,11 @@
-# TODO: Fix Default Avatar Display
+# Notification Read Status Fix
 
-- [x] Update User model default avatar path in pool_app/models.py from 'profile_pictures/default_avatar.png' to 'pool_app/image/default_avatar.png'
-- [x] Update default avatar reference in templates/base.html from 'pool_app/image/default_avatar.jpg' to 'pool_app/image/default_avatar.png'
-- [x] Update default avatar reference in templates/profile.html from 'pool_app/image/default_avatar.jpg' to 'pool_app/image/default_avatar.png'
+## Tasks
+- [x] Add Notification model to models.py
+- [x] Update Booking.save() to create notifications on status changes
+- [x] Update get_notifications() in views.py to use Notification model
+- [x] Add mark_as_read logic in admin_bookings view for admins
+- [x] Add mark_as_read logic in user_bookings view for users
+- [x] Run makemigrations and migrate
+- [x] Test notification system in browser
+- [x] Test notification system

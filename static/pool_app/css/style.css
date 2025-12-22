@@ -742,6 +742,37 @@ html, body {
 .text-warning-light { color: #fde68a !important; }
 
 /* ============================================= */
+/*               NOTIFICATION STYLES             */
+/* ============================================= */
+
+/* Notification Bell Icon */
+.nav-link .bi-bell {
+    color: #ffffff !important;
+    font-size: 1.2rem;
+    opacity: 0.9;
+    transition: all 0.3s ease;
+}
+
+.nav-link .bi-bell:hover {
+    color: #e0e7ff !important;
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Notification Badge */
+.position-relative .badge {
+    font-size: 0.65rem !important;
+    padding: 0.2rem 0.4rem !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    line-height: 1 !important;
+    border-radius: 50% !important;
+    font-weight: 700 !important;
+    top: -2px !important;
+    right: -2px !important;
+}
+
+/* ============================================= */
 /*               UTILITY CLASSES                 */
 /* ============================================= */
 
