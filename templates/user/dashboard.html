@@ -6,7 +6,7 @@
 {% block content %}
 <div class="page-wrapper">
     {% if messages %}
-        <div class="container-fluid mb-3">
+        <div class="container-fluid mb-4">
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                     {{ message }}
@@ -16,144 +16,117 @@
         </div>
     {% endif %}
 
-    <div class="content-card">
-
-        <!-- ACTION BAR -->
-        <div class="action-bar">
-            <div class="text-center">
-                <small class="text-muted">
-                    <strong>{{ vehicles|length }}</strong> vehicle{{ vehicles|length|pluralize }} found
-                </small>
-            </div>
+    <div class="content-card p-4">
+        <!-- Count Header -->
+        <div class="text-center mb-4">
+            <h4 class="text-primary fw-bold">
+                {{ vehicles|length }} Vehicle{{ vehicles|length|pluralize }} Available
+            </h4>
         </div>
 
-        <!-- VEHICLE GRID -->
-        <div class="row g-3">
+        <!-- Compact Grid — More cards per row -->
+        <div class="row g-3 justify-content-start">
             {% for v in vehicles %}
-            <div class="col-md-4 col-lg-3">
-                <div class="card border-0 shadow-sm hover-lift">
-                    <div class="card-body d-flex flex-column p-3">
+            <div class="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2">
+                <div class="vehicle-card-small">
+                    <!-- Image -->
+                    <div class="vehicle-image-container-small">
                         {% if v.photo %}
-                            <img src="{{ v.photo.url }}"
-                                 alt="{{ v.model }}"
-                                 class="vehicle-photo mb-2">
+                            <img src="{{ v.photo.url }}" alt="{{ v.model }}" class="vehicle-image-small">
                         {% else %}
-                            <div class="vehicle-photo-placeholder mb-2">
-                                <i class="bi bi-car-front text-muted"></i>
-                            </div>
+                            <i class="bi bi-truck vehicle-placeholder-small"></i>
                         {% endif %}
-                        <h6 class="card-title mb-2">{{ v.model }}</h6>
+                    </div>
 
-                        <div class="mb-3">
-                            <p class="mb-1 small"><strong>Plate:</strong> <span class="text-primary fw-bold">{{ v.vehicle_number }}</span></p>
-                            <p class="mb-1 small"><strong>Seats:</strong> <span class="badge bg-light text-dark">{{ v.capacity }}</span></p>
-                            <p class="mb-0 small"><strong>Driver:</strong>
-                                {% if v.assigned_driver %}
-                                    <span class="text-success fw-bold">{{ v.assigned_driver.name }}</span>
-                                {% else %}
-                                    <em class="text-muted">Not Assigned</em>
-                                {% endif %}
-                            </p>
+                    <!-- Body -->
+                    <div class="vehicle-card-body-small">
+                        <h6 class="vehicle-model-title">{{ v.model }}</h6>
+
+                        <div class="vehicle-info-small">
+                            <div class="info-row-small">
+                                <i class="bi bi-tag-fill info-icon-small text-primary"></i>
+                                <span class="info-label-small">Plate:</span>
+                                <span class="info-value-small fw-bold">{{ v.vehicle_number }}</span>
+                            </div>
+                            <div class="info-row-small">
+                                <i class="bi bi-people-fill info-icon-small text-success"></i>
+                                <span class="info-label-small">Seats:</span>
+                                <span class="info-value-small">{{ v.capacity }}</span>
+                            </div>
+                            <div class="info-row-small">
+                                <i class="bi bi-person-fill info-icon-small text-info"></i>
+                                <span class="info-label-small">Driver:</span>
+                                <span class="info-value-small">
+                                    {% if v.assigned_driver %}
+                                        <strong class="text-success">{{ v.assigned_driver.name }}</strong>
+                                    {% else %}
+                                        <em class="text-muted">None</em>
+                                    {% endif %}
+                                </span>
+                            </div>
                         </div>
 
-                        <div class="mt-auto">
-                            <button class="btn btn-primary-gradient w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#requestModal{{ v.id }}">
-                                Request Trip
-                            </button>
+                        <div class="text-center">
+                            <span class="status-badge-small status-{{ v.status|lower }}-small">
+                                {{ v.get_status_display }}
+                            </span>
                         </div>
+
+                        <button class="btn btn-request-small w-100 mt-2" data-bs-toggle="modal" data-bs-target="#requestModal{{ v.id }}">
+                            <i class="bi bi-calendar-plus"></i> Request Trip
+                        </button>
                     </div>
                 </div>
             </div>
             {% empty %}
             <div class="col-12 text-center py-5">
-                <i class="bi bi-truck display-4 text-muted mb-3"></i>
-                <h5 class="text-muted">No vehicles available</h5>
+                <i class="bi bi-truck display-4 text-muted mb-4"></i>
+                <h5 class="text-muted fw-bold">No vehicles available</h5>
                 <p class="text-muted">Please check back later.</p>
             </div>
             {% endfor %}
         </div>
+    </div>
 
-        <!-- REQUEST MODALS -->
-        {% for v in vehicles %}
-        <div class="modal fade" id="requestModal{{ v.id }}" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <form method="post" action="{% url 'request_vehicle' v.id %}">
-                    {% csrf_token %}
-                    <div class="modal-content border-0 shadow">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title"><i class="bi bi-car-front me-2"></i>Request: {{ v.model }}</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            {% if form %}
-                                {% if form.non_field_errors %}
-                                <div class="alert alert-danger mb-3">
-                                    {{ form.non_field_errors.0 }}
-                                </div>
-                                {% endif %}
-
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Start Time *</label>
-                                        {{ form.start_time }}
-                                        <small class="text-danger d-block">{{ form.start_time.errors.0 }}</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">End Time *</label>
-                                        {{ form.end_time }}
-                                        <small class="text-danger d-block">{{ form.end_time.errors.0 }}</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Destination *</label>
-                                        {{ form.destination }}
-                                        <small class="text-danger d-block">{{ form.destination.errors.0 }}</small>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Purpose *</label>
-                                        {{ form.purpose }}
-                                        <small class="text-danger d-block">{{ form.purpose.errors.0 }}</small>
-                                    </div>
-                                </div>
-                            {% else %}
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Start Time *</label>
-                                        <input name="start_time" type="datetime-local" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">End Time *</label>
-                                        <input name="end_time" type="datetime-local" class="form-control" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Destination *</label>
-                                        <input name="destination" class="form-control" placeholder="e.g. Dhaka Office" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold">Purpose *</label>
-                                        <input name="purpose" class="form-control" placeholder="e.g. Meeting" required>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Submit Request</button>
+    <!-- Modals -->
+    {% for v in vehicles %}
+    <div class="modal fade" id="requestModal{{ v.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <form method="post" action="{% url 'request_vehicle' v.id %}">
+                {% csrf_token %}
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="bi bi-car-front me-2"></i>Request: {{ v.model }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Start Time *</label>
+                                <input type="datetime-local" name="start_time" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">End Time *</label>
+                                <input type="datetime-local" name="end_time" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Destination *</label>
+                                <input type="text" name="destination" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Purpose *</label>
+                                <input type="text" name="purpose" class="form-control" required>
+                            </div>
                         </div>
                     </div>
-                </form>
-            </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Submit Request</button>
+                    </div>
+                </div>
+            </form>
         </div>
-        {% endfor %}
-
-        <!-- AUTO OPEN MODAL ON ERROR -->
-        {% if modal_vehicle_id %}
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var modal = new bootstrap.Modal(document.getElementById('requestModal{{ modal_vehicle_id }}'));
-                modal.show();
-            });
-        </script>
-        {% endif %}
     </div>
+    {% endfor %}
 </div>
 {% endblock %}

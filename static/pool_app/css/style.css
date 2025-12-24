@@ -1414,33 +1414,149 @@ html, body {
 }
 
 /* ============================================= */
-/*               USER DASHBOARD VEHICLE STYLES  */
+/*         SUPER COMPACT VEHICLE CARDS (USER DASHBOARD) */
 /* ============================================= */
 
-.vehicle-photo {
-    width: 100% !important;
-    max-width: 200px !important;
-    height: 120px !important;
-    object-fit: cover !important;
-    border-radius: 6px !important;
-    display: block !important;
-    margin: 0 auto !important;
+/* Main Card */
+.vehicle-card-small {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.vehicle-photo-placeholder {
-    width: 100% !important;
-    max-width: 200px !important;
-    height: 120px !important;
-    background: #f8f9fa !important;
-    border-radius: 6px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    margin: 0 auto !important;
+.vehicle-card-small:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.12);
+    border-color: #3b82f6;
 }
 
-.vehicle-photo-placeholder .bi-car-front {
-    font-size: 2.5rem !important;
+/* Image */
+.vehicle-image-container-small {
+    height: 110px;
+    overflow: hidden;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+.vehicle-image-small {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
 
+.vehicle-placeholder-small {
+    font-size: 2.8rem;
+    color: #cbd5e1;
+}
+
+/* Body */
+.vehicle-card-body-small {
+    padding: 0.8rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Model Title */
+.vehicle-model-title {
+
+    font-size: 1.1rem;
+    
+    font-weight: 700;
+    color: #1e293b;
+    text-align: center;
+    margin-bottom: 0.6rem;
+}
+
+/* Info */
+.vehicle-info-small {
+    margin-bottom: 0.8rem;
+    flex-grow: 1;
+}
+
+.info-row-small {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+}
+
+.info-icon-small {
+    width: 18px;
+    text-align: center;
+    margin-right: 0.5rem;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.info-label-small {
+    font-weight: 600;
+    color: #475569;
+    min-width: 55px;
+}
+
+.info-value-small {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+/* Status Badge */
+.status-badge-small {
+    align-self: center;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    margin: 0.5rem 0;
+    font-weight: 600;
+}
+
+.status-available-small { background: #d1fae5; color: #065f46; }
+.status-reserved-small { background: #fef3c7; color: #92400e; }
+.status-booked-small { background: #fee2e2; color: #991b1b; }
+.status-maintenance-small { background: #fef3c7; color: #92400e; }
+.status-out-small { background: #f3f4f6; color: #4b5563; }
+
+/* Button */
+.btn-request-small {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.btn-request-small:hover {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(59, 130, 246, 0.4);
+}
+
+.btn-request-small i {
+    margin-right: 0.4rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .vehicle-card-small { font-size: 0.9rem; }
+}
+
+@media (max-width: 992px) {
+    .vehicle-image-container-small { height: 100px; }
+    .vehicle-placeholder-small { font-size: 2.5rem; }
+}
+
+@media (max-width: 768px) {
+    .vehicle-image-container-small { height: 90px; }
+}
