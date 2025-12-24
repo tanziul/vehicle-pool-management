@@ -7,8 +7,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils.timezone import localtime
 from .models import User, Driver, Vehicle, Booking, TripReport, Notification
-from .forms import BookingForm   
-
+from .forms import BookingForm
 
 @login_required
 def profile(request):
@@ -32,10 +31,10 @@ def profile(request):
         context['bookings_approved'] = user.approved_bookings.count()
         context['total_vehicles_managed'] = Vehicle.objects.count()
 
-    context.update(get_notifications(request))  # Added notifications
+    context.update(get_notifications(request)) 
     return render(request, 'profile.html', context)
 
-# SEARCH FUNCTION — FIXED
+# SEARCH FUNCTION 
 def search_queryset(queryset, fields, q):
     if not q:
         return queryset
@@ -62,8 +61,10 @@ def update_expired_bookings():
             booking.status = 'Completed'
             booking.save()
         
-        # Create TripReport if it doesn't exist
-        if not hasattr(booking, 'trip_report'):
+
+        try:
+            booking.trip_report
+        except TripReport.DoesNotExist:
             TripReport.objects.create(
                 booking=booking,
                 completed_at=now
@@ -147,7 +148,7 @@ def user_dashboard(request):
 def user_bookings(request):
     update_expired_bookings()
 
-    # Mark approved/rejected notifications as read for this user
+   
     Notification.objects.filter(
         user=request.user,
         type__in=['approved', 'rejected'],
@@ -201,27 +202,32 @@ def admin_dashboard(request):
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
     
-    now = timezone.now()
+    from django.utils.timezone import localtime
+    from pytz import utc
+    from calendar import monthrange
+    from datetime import datetime, time, timedelta
+
+    now = localtime(timezone.now())
     today = now.date()
-    
-    # 1. Trips This Month - KEPT YOUR ORIGINAL LOOP (as requested)
-    completed_this_month = 0
-    for booking in Booking.objects.filter(status='Completed'):
-        if booking.end_time.year == now.year and booking.end_time.month == now.month:
-            completed_this_month += 1
-    
-    # 2. Approved Today
-    import datetime
-    from django.utils.timezone import make_aware
-    
-    today_start = make_aware(datetime.datetime.combine(today, datetime.datetime.min.time()))
-    today_end = make_aware(datetime.datetime.combine(today, datetime.datetime.max.time()))
-    
+
+    # Calculate UTC date ranges for today
+    today_start_utc = datetime.combine(today, time.min).replace(tzinfo=utc)
+    today_end_utc = datetime.combine(today, time.max).replace(tzinfo=utc) + timedelta(microseconds=1)
+
+    # Calculate UTC date ranges for this month
+    first_day = today.replace(day=1)
+    last_day = today.replace(day=monthrange(today.year, today.month)[1])
+    month_start_utc = datetime.combine(first_day, time.min).replace(tzinfo=utc)
+    month_end_utc = datetime.combine(last_day, time.max).replace(tzinfo=utc) + timedelta(microseconds=1)
+
+    completed_this_month = TripReport.objects.filter(
+        completed_at__gte=month_start_utc,
+        completed_at__lt=month_end_utc
+    ).count()
+
     approved_today_count = Booking.objects.filter(
-        status='Approved',
-        approved_at__isnull=False,
-        approved_at__gte=today_start,
-        approved_at__lte=today_end
+        approved_at__gte=today_start_utc,
+        approved_at__lt=today_end_utc
     ).count()
     
     stats = {
@@ -244,7 +250,7 @@ def admin_dashboard(request):
     
     stats['today'] = now
     
-    stats.update(get_notifications(request))  # Added notifications
+    stats.update(get_notifications(request))  
     return render(request, 'admin/dashboard.html', stats)
 
 
@@ -254,14 +260,14 @@ def admin_bookings(request):
     if not (request.user.is_superuser or request.user.role == 'Admin'):
         return redirect('dashboard')
 
-    # Mark pending notifications as read for this admin
+ 
     Notification.objects.filter(
         user=request.user,
         type='pending',
         read=False
     ).update(read=True)
 
-    bookings = Booking.objects.select_related('employee', 'vehicle', 'approved_by').all().order_by('-priority', 'start_time')
+    bookings = Booking.objects.select_related('employee', 'vehicle', 'approved_by').all().order_by('-created_at')
     q = request.GET.get('q', '').strip()
     if q:
         bookings = search_queryset(bookings, [
@@ -292,7 +298,10 @@ def admin_vehicles(request):
     if status_filter:
         vehicles = vehicles.filter(status=status_filter)
     vehicles = vehicles.order_by('-id')
-    drivers = Driver.objects.filter(status='Active', assigned_vehicle__isnull=True)
+    drivers_unassigned = Driver.objects.filter(status='Active', assigned_vehicle__isnull=True)
+    drivers_all_active = Driver.objects.filter(
+        Q(status='Active', assigned_vehicle__isnull=True) | Q(status='Active', id__in=vehicles.values_list('assigned_driver', flat=True))
+    ).distinct()
 
     if request.method == 'POST':
         try:
@@ -303,6 +312,10 @@ def admin_vehicles(request):
                     capacity=int(request.POST['capacity']),
                     status='Available'
                 )
+                # Handle photo upload
+                if 'photo' in request.FILES:
+                    vehicle.photo = request.FILES['photo']
+                    vehicle.save()
                 driver_id = request.POST.get('assigned_driver')
                 if driver_id:
                     driver = get_object_or_404(Driver, id=driver_id)
@@ -313,7 +326,7 @@ def admin_vehicles(request):
             messages.error(request, f"Error: {e}")
         return redirect('admin_vehicles')
 
-    context = {'vehicles': vehicles, 'drivers': drivers}
+    context = {'vehicles': vehicles, 'drivers_unassigned': drivers_unassigned, 'drivers_all_active': drivers_all_active}
     context.update(get_notifications(request))
     return render(request, 'admin/vehicles.html', context)
 
@@ -324,51 +337,69 @@ def edit_vehicle(request, pk):
         return redirect('dashboard')
 
     vehicle = get_object_or_404(Vehicle, pk=pk)
-    drivers = Driver.objects.filter(status='Active')
+  
+    drivers = Driver.objects.all()
 
     if request.method == 'POST':
         try:
             with transaction.atomic():
-               
+             
+                try:
+                    current_driver = vehicle.assigned_driver
+                except:
+                    current_driver = None
+
+                # Update basic vehicle info
                 vehicle.model = request.POST['model'].strip()
                 vehicle.vehicle_number = request.POST['vehicle_number'].strip().upper()
                 vehicle.capacity = int(request.POST['capacity'])
                 new_status = request.POST['status']
 
-         
-                driver_id = request.POST.get('assigned_driver', '')
+                # Handle driver assignment
+                driver_id = request.POST.get('assigned_driver', '').strip()
 
-                
-                current_driver = vehicle.assigned_driver if hasattr(vehicle, 'assigned_driver') else None
-
-              
+                # If no driver selected
                 if not driver_id:
                     if current_driver:
                         current_driver.assigned_vehicle = None
                         current_driver.save(update_fields=['assigned_vehicle'])
 
-                
+                # If a driver is selected
                 else:
-                    new_driver = get_object_or_404(Driver, id=int(driver_id), status='Active')
+                    new_driver = get_object_or_404(Driver, id=int(driver_id))
 
+                    # Check if driver is already assigned to another vehicle
                     if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
                         messages.error(request, f"Driver {new_driver.name} is already assigned to another vehicle!")
                         return redirect('admin_vehicles')
 
-                   
+                    # Unassign current driver if different from new driver
                     if current_driver and current_driver != new_driver:
                         current_driver.assigned_vehicle = None
                         current_driver.save(update_fields=['assigned_vehicle'])
 
-                    
+                    # Assign new driver to this vehicle
                     new_driver.assigned_vehicle = vehicle
                     new_driver.save(update_fields=['assigned_vehicle'])
 
-               
-                if new_status in ['Maintenance', 'Out of Service'] and current_driver:
-                    vehicle.last_assigned_driver = current_driver
-                    current_driver.assigned_vehicle = None
-                    current_driver.save(update_fields=['assigned_vehicle'])
+                # Refresh vehicle to get updated assigned_driver
+                vehicle.refresh_from_db()
+
+                # Handle status changes that affect driver assignment
+                if new_status in ['Maintenance', 'Out of Service']:
+                    # For maintenance/out of service, unassign driver and store as last_assigned_driver
+                    try:
+                        assigned_driver = vehicle.assigned_driver
+                        vehicle.last_assigned_driver = assigned_driver
+                        assigned_driver.assigned_vehicle = None
+                        assigned_driver.save(update_fields=['assigned_vehicle'])
+                    except:
+                        # No driver assigned, just set last_assigned_driver to None
+                        vehicle.last_assigned_driver = None
+
+                # Handle photo upload
+                if 'photo' in request.FILES:
+                    vehicle.photo = request.FILES['photo']
 
                 vehicle.status = new_status
                 vehicle.save()
@@ -396,12 +427,16 @@ def admin_drivers(request):
     # ADD DRIVER
     if request.method == 'POST' and 'add_driver' in request.POST:
         try:
-            Driver.objects.create(
+            driver = Driver.objects.create(
                 name=request.POST['name'].strip(),
                 phone=request.POST['phone'].strip(),
                 license_no=request.POST['license_no'].strip(),
                 status=request.POST.get('status', 'Active')
             )
+            # Handle photo upload
+            if 'photo' in request.FILES:
+                driver.photo = request.FILES['photo']
+                driver.save()
             messages.success(request, "Driver added!")
         except Exception as e:
             messages.error(request, f"Error: {e}")
@@ -413,6 +448,9 @@ def admin_drivers(request):
         driver.phone = request.POST['phone'].strip()
         driver.license_no = request.POST['license_no'].strip()
         driver.status = request.POST['status']
+        # Handle photo upload
+        if 'photo' in request.FILES:
+            driver.photo = request.FILES['photo']
         driver.save()
         messages.success(request, "Driver updated!")
 
@@ -465,7 +503,7 @@ def admin_users(request):
                 is_active=True
             )
             
-            # Handle profile picture upload
+            # profile picture upload
             if 'profile_picture' in request.FILES:
                 user.profile_picture = request.FILES['profile_picture']
                 user.save()
@@ -511,8 +549,6 @@ def approve_booking(request, pk):
             booking.approved_by = request.user
             booking.approved_at = timezone.now()
             booking.save()
-            booking.vehicle.status = 'Booked'
-            booking.vehicle.save()
             messages.success(request, f"Booking approved for {booking.employee.get_full_name() or booking.employee.username}!")
         except Exception as e:
             messages.error(request, f"Error approving booking: {e}")

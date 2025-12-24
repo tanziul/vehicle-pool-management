@@ -40,7 +40,7 @@
             <table class="table data-table align-middle">
                 <thead>
                     <tr>
-                        <th>Name</th>
+                        <th style="width: 15%;">Name</th>
                         <th>Phone</th>
                         <th>License No</th>
                         <th>Assigned Vehicle</th>
@@ -51,7 +51,13 @@
                 <tbody>
                     {% for driver in drivers %}
                     <tr>
-                        <td class="fw-bold">{{ driver.name }}</td>
+                        <td class="fw-bold">
+                            <img src="{{ driver.get_photo_url }}"
+                                 alt="{{ driver.name }}"
+                                 class="rounded-circle me-2"
+                                 style="width: 45px; height: 45px; object-fit: cover; border: 2px solid #e5e7eb;">
+                            {{ driver.name }}
+                        </td>
                         <td>{{ driver.phone|default:"—" }}</td>
                         <td><code class="code">{{ driver.license_no }}</code></td>
                         <td>
@@ -74,8 +80,8 @@
                     <!-- Edit Modal -->
                     <div class="modal fade" id="edit{{ driver.id }}">
                         <div class="modal-dialog modal-dialog-centered">
-                            <form method="post">
-                                {% csrf_token %}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
                                 <input type="hidden" name="driver_id" value="{{ driver.id }}">
                                 <div class="modal-content">
                                     <div class="modal-header bg-warning text-dark">
@@ -89,6 +95,9 @@
                                         <input name="phone" value="{{ driver.phone }}" class="form-control mb-3" required>
                                         <label class="form-label fw-semibold">License Number</label>
                                         <input name="license_no" value="{{ driver.license_no }}" class="form-control mb-3" required>
+                                        <label class="form-label fw-semibold">Driver Photo <small class="text-muted">(Optional)</small></label>
+                                        <input type="file" name="photo" class="form-control mb-3" accept="image/*">
+                                        <small class="text-muted d-block mb-3">JPG, PNG or GIF. Max 2MB.</small>
                                         <label class="form-label fw-semibold">Status</label>
                                         <select name="status" class="form-select">
                                             <option value="Active" {% if driver.status == 'Active' %}selected{% endif %}>Active</option>
@@ -143,6 +152,11 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold">License Number</label>
                                 <input name="license_no" placeholder="e.g. DHK-123456" class="form-control form-control-lg" required>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label fw-semibold">Driver Photo <small class="text-muted">(Optional)</small></label>
+                                <input type="file" name="photo" class="form-control form-control-lg" accept="image/*">
+                                <small class="text-muted">JPG, PNG or GIF. Max 2MB.</small>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label fw-semibold">Status</label>

@@ -28,17 +28,26 @@
         </div>
 
         <!-- VEHICLE GRID -->
-        <div class="row g-4">
+        <div class="row g-3">
             {% for v in vehicles %}
-            <div class="col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm hover-lift">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title mb-3">{{ v.model }}</h5>
-                        
-                        <div class="mb-4">
-                            <p class="mb-2"><strong>Plate:</strong> <span class="text-primary fw-bold">{{ v.vehicle_number }}</span></p>
-                            <p class="mb-2"><strong>Seats:</strong> <span class="badge bg-light text-dark">{{ v.capacity }}</span></p>
-                            <p class="mb-0"><strong>Driver:</strong>
+            <div class="col-md-4 col-lg-3">
+                <div class="card border-0 shadow-sm hover-lift">
+                    <div class="card-body d-flex flex-column p-3">
+                        {% if v.photo %}
+                            <img src="{{ v.photo.url }}"
+                                 alt="{{ v.model }}"
+                                 class="vehicle-photo mb-2">
+                        {% else %}
+                            <div class="vehicle-photo-placeholder mb-2">
+                                <i class="bi bi-car-front text-muted"></i>
+                            </div>
+                        {% endif %}
+                        <h6 class="card-title mb-2">{{ v.model }}</h6>
+
+                        <div class="mb-3">
+                            <p class="mb-1 small"><strong>Plate:</strong> <span class="text-primary fw-bold">{{ v.vehicle_number }}</span></p>
+                            <p class="mb-1 small"><strong>Seats:</strong> <span class="badge bg-light text-dark">{{ v.capacity }}</span></p>
+                            <p class="mb-0 small"><strong>Driver:</strong>
                                 {% if v.assigned_driver %}
                                     <span class="text-success fw-bold">{{ v.assigned_driver.name }}</span>
                                 {% else %}
@@ -48,7 +57,7 @@
                         </div>
 
                         <div class="mt-auto">
-                            <button class="btn btn-primary-gradient w-100 py-3 fw-bold" data-bs-toggle="modal" data-bs-target="#requestModal{{ v.id }}">
+                            <button class="btn btn-primary-gradient w-100 py-2 fw-bold" data-bs-toggle="modal" data-bs-target="#requestModal{{ v.id }}">
                                 Request Trip
                             </button>
                         </div>

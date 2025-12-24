@@ -3,6 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 import threading
+from urllib.parse import quote
 
 
 class User(AbstractUser):
@@ -17,7 +18,6 @@ class User(AbstractUser):
         upload_to='profile_pictures/',
         null=True,
         blank=True,
-      
     )
     
     def get_profile_picture_url(self):
@@ -33,7 +33,7 @@ class User(AbstractUser):
 class Vehicle(models.Model):
     STATUS_CHOICES = [
         ('Available', 'Available'),
-        ('Reserved', 'Reserved'),        
+        ('Reserved', 'Reserved'),
         ('Booked', 'Booked'),
         ('Maintenance', 'Maintenance'),
         ('Out of Service', 'Out of Service'),
@@ -41,9 +41,13 @@ class Vehicle(models.Model):
     model = models.CharField(max_length=100)
     vehicle_number = models.CharField(max_length=20, unique=True)
     capacity = models.PositiveIntegerField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='vailable')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')  # Fixed typo from 'vailable'
+    photo = models.ImageField(
+        upload_to='vehicle_photos/',
+        null=True,
+        blank=True,
+    )
 
-    
     last_assigned_driver = models.ForeignKey(
         'Driver',
         on_delete=models.SET_NULL,
@@ -52,6 +56,12 @@ class Vehicle(models.Model):
         related_name='previously_assigned_vehicles',
         help_text="Shows previous driver when vehicle is Out of Service"
     )
+
+    def get_photo_url(self):
+        """Return photo URL or default avatar URL"""
+        if self.photo and hasattr(self.photo, 'url'):
+            return self.photo.url
+        return f"https://ui-avatars.com/api/?name={quote(self.model)}&background=3b82f6&color=fff&size=100"
 
     def __str__(self):
         return f"{self.model} ({self.vehicle_number})"
@@ -66,15 +76,26 @@ class Driver(models.Model):
         choices=[('Active', 'Active'), ('Inactive', 'Inactive')],
         default='Active'
     )
+    photo = models.ImageField(
+        upload_to='driver_photos/',
+        null=True,
+        blank=True,
+    )
 
-    
+
     assigned_vehicle = models.OneToOneField(
-        'Vehicle',  
+        'Vehicle',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='assigned_driver'
     )
+
+    def get_photo_url(self):
+        """Return photo URL or default avatar URL"""
+        if self.photo and hasattr(self.photo, 'url'):
+            return self.photo.url
+        return f"https://ui-avatars.com/api/?name={quote(self.name)}&background=10b981&color=fff&size=100"
 
     def __str__(self):
         return self.name
@@ -93,7 +114,6 @@ class Booking(models.Model):
     employee = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bookings_made')
     vehicle = models.ForeignKey(Vehicle, on_delete=models.SET_NULL, null=True, related_name='bookings')
     destination = models.CharField(max_length=200)
-
     purpose = models.TextField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -179,7 +199,7 @@ class TripReport(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.completed_at:
-            self.completed_at = self.booking.end_time
+            self.completed_at = self.booking.end_time  # Use actual trip end time
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -228,4 +248,3 @@ def _release_vehicle_after_delay(booking_id):
             timer.start()
     except Booking.DoesNotExist:
         pass
-

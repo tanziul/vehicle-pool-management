@@ -74,7 +74,7 @@
                         </td>
                         <td>{{ b.destination|default:"—" }}</td>
                         <td><small title="{{ b.purpose }}">{{ b.purpose|truncatechars:30|default:"—" }}</small></td>
-                        <td><small>{{ b.start_time|date:"M j, Y H:i" }} → {{ b.end_time|date:"M j, Y H:i"|default:"—" }}</small></td>
+                        <td><small>{{ b.start_time|date:"M j, Y g:i A" }} → {{ b.end_time|date:"M j, Y g:i A"|default:"—" }}</small></td>
                         <td>
                             <span class="badge rounded-pill px-3 {% if b.priority == 5 %}bg-danger text-white{% elif b.priority == 4 %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %}">
                                 {{ b.get_priority_display }}

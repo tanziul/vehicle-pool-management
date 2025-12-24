@@ -11,14 +11,11 @@
         <!-- Profile Header -->
         <div class="profile-header-section">
             <div class="d-flex align-items-center gap-3">
-                <!-- GUARANTEED WORKING: External avatar service with fallback -->
                 {% if user.profile_picture %}
-                    <!-- Try user's uploaded picture first -->
                     <img src="{{ user.profile_picture.url }}" class="profile-main-avatar"
                          alt="{{ user.get_full_name|default:user.username }}"
                          onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=3b82f6&color=fff&size=200'">
                 {% else %}
-                    <!-- No uploaded picture - use external avatar -->
                     <img src="https://ui-avatars.com/api/?name={{ user.get_full_name|default:user.username|urlencode }}&background=3b82f6&color=fff&size=200"
                          class="profile-main-avatar"
                          alt="{{ user.get_full_name|default:user.username }}">

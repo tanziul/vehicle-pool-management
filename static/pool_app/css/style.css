@@ -562,7 +562,7 @@ html, body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    padding: 1.2rem 1rem;
+    padding: 0.8rem 1rem;
     border: none;
     position: sticky;
     top: 0;
@@ -572,6 +572,7 @@ html, body {
 .data-table tbody tr {
     transition: all 0.2s ease;
     border-bottom: 1px solid #f1f5f9;
+    height: 60px;
 }
 
 .data-table tbody tr:hover {
@@ -585,7 +586,7 @@ html, body {
 }
 
 .data-table tbody td {
-    padding: 1rem 1rem;
+    padding: 0.6rem 1rem;
     vertical-align: middle;
     border: none;
     color: #374151;
@@ -1410,6 +1411,36 @@ html, body {
 
 .table.data-table tbody tr:hover {
     background-color: #e2e8f0 !important;
+}
+
+/* ============================================= */
+/*               USER DASHBOARD VEHICLE STYLES  */
+/* ============================================= */
+
+.vehicle-photo {
+    width: 100% !important;
+    max-width: 200px !important;
+    height: 120px !important;
+    object-fit: cover !important;
+    border-radius: 6px !important;
+    display: block !important;
+    margin: 0 auto !important;
+}
+
+.vehicle-photo-placeholder {
+    width: 100% !important;
+    max-width: 200px !important;
+    height: 120px !important;
+    background: #f8f9fa !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 auto !important;
+}
+
+.vehicle-photo-placeholder .bi-car-front {
+    font-size: 2.5rem !important;
 }
 
 

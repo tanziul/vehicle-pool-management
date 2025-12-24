@@ -70,44 +70,51 @@
                 <tbody>
                     {% for v in vehicles %}
                     <tr>
-                        <td class="fw-bold text-dark">{{ v.model }}</td>
+                        <td class="fw-bold text-dark">
+                            <img src="{{ v.get_photo_url }}"
+                                 alt="{{ v.model }}"
+                                 class="rounded-circle me-2"
+                                 style="width: 45px; height: 45px; object-fit: cover; border: 2px solid #e5e7eb;">
+                            {{ v.model }}
+                        </td>
                         <td><strong>{{ v.vehicle_number }}</strong></td>
                         <td><span class="badge bg-light text-dark">{{ v.capacity }} seats</span></td>
-<td>
-    {% if v.assigned_driver %}
-        {% if v.status == 'Maintenance' %}
-            <span class="badge bg-warning text-dark">
-                {{ v.assigned_driver.name }}
-            </span>
-            <br>
-            <small class="text-muted"><i class="bi bi-tools"></i> Vehicle in Maintenance</small>
-        {% elif v.status == 'Out of Service' %}
-            <span class="badge bg-secondary text-decoration-line-through">
-                {{ v.last_assigned_driver.name|default:v.assigned_driver.name }}
-            </span>
-            <br>
-            <small class="text-muted"><i class="bi bi-exclude"></i> Previously assigned</small>
-        {% else %}
-            <span class="badge bg-primary">
-                {{ v.assigned_driver.name }}
-            </span>
-        {% endif %}
-    {% else %}
-        {% if v.last_assigned_driver and v.status == 'Out of Service' %}
-            <span class="badge bg-secondary text-decoration-line-through">
-                {{ v.last_assigned_driver.name }}
-            </span>
-            <br>
-            <small class="text-muted"><i class="bi bi-exclude"></i> Previously assigned</small>
-        {% elif v.status == 'Maintenance' %}
-            <span class="badge bg-light text-dark border">No driver</span>
-            <br>
-            <small class="text-muted"><i class="bi bi-tools"></i> Vehicle in Maintenance</small>
-        {% else %}
-            <em class="text-muted">No driver</em>
-        {% endif %}
-    {% endif %}
-</td>                 <td>
+                        <td>
+                            {% if v.assigned_driver %}
+                                {% if v.status == 'Maintenance' %}
+                                    <span class="badge bg-warning text-dark">
+                                        {{ v.assigned_driver.name }}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted"><i class="bi bi-tools"></i> Vehicle in Maintenance</small>
+                                {% elif v.status == 'Out of Service' %}
+                                    <span class="badge bg-secondary text-decoration-line-through">
+                                        {{ v.last_assigned_driver.name|default:v.assigned_driver.name }}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted"><i class="bi bi-exclude"></i> Previously assigned</small>
+                                {% else %}
+                                    <span class="badge bg-primary">
+                                        {{ v.assigned_driver.name }}
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                {% if v.last_assigned_driver and v.status == 'Out of Service' %}
+                                    <span class="badge bg-secondary text-decoration-line-through">
+                                        {{ v.last_assigned_driver.name }}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted"><i class="bi bi-exclude"></i> Previously assigned</small>
+                                {% elif v.status == 'Maintenance' %}
+                                    <span class="badge bg-light text-dark border">No driver</span>
+                                    <br>
+                                    <small class="text-muted"><i class="bi bi-tools"></i> Vehicle in Maintenance</small>
+                                {% else %}
+                                    <em class="text-muted">No driver</em>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>
                             {% if v.status == 'Available' %}
                                 <span class="status-badge status-available">Available</span>
                             {% elif v.status == 'Booked' %}
@@ -129,7 +136,7 @@
 <!-- Edit Modal -->
 <div class="modal fade" id="editVehicle{{ v.id }}">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <form method="post" action="{% url 'edit_vehicle' v.id %}">
+        <form method="post" action="{% url 'edit_vehicle' v.id %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-warning text-dark">
@@ -150,6 +157,11 @@
                             <label>Seats</label>
                             <input name="capacity" value="{{ v.capacity }}" type="number" min="1" class="form-control" required>
                         </div>
+                        <div class="col-md-6">
+                            <label>Vehicle Photo <small class="text-muted">(Optional)</small></label>
+                            <input type="file" name="photo" class="form-control" accept="image/*">
+                            <small class="text-muted">JPG, PNG or GIF. Max 2MB.</small>
+                        </div>
 <div class="col-md-6">
     <label>Status</label>
     <select name="status" class="form-select" required>
@@ -169,10 +181,17 @@
                             <label>Assign Driver</label>
                             <select name="assigned_driver" class="form-select">
                                 <option value="">— No Driver —</option>
-                                {% for d in drivers %}
-                                    <option value="{{ d.id }}" {% if v.assigned_driver and v.assigned_driver.id == d.id %}selected{% endif %}>
-                                        {{ d.name }} ({{ d.license_no }})
+                                {% if v.assigned_driver %}
+                                    <option value="{{ v.assigned_driver.id }}" selected>
+                                        {{ v.assigned_driver.name }} ({{ v.assigned_driver.license_no }})
                                     </option>
+                                {% endif %}
+                                {% for d in drivers_unassigned %}
+                                    {% if not v.assigned_driver or v.assigned_driver.id != d.id %}
+                                        <option value="{{ d.id }}">
+                                            {{ d.name }} ({{ d.license_no }})
+                                        </option>
+                                    {% endif %}
                                 {% endfor %}
                             </select>
                         </div>
@@ -204,7 +223,7 @@
 <!-- ADD VEHICLE MODAL -->
 <div class="modal fade" id="addVehicleModal">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <form method="post" action="{% url 'admin_vehicles' %}">
+        <form method="post" action="{% url 'admin_vehicles' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="modal-content border-0 shadow">
                 <div class="modal-header bg-primary text-white">
@@ -226,11 +245,16 @@
                             <input name="capacity" type="number" min="1" class="form-control" placeholder="14" required>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vehicle Photo <small class="text-muted">(Optional)</small></label>
+                            <input type="file" name="photo" class="form-control" accept="image/*">
+                            <small class="text-muted">JPG, PNG or GIF. Max 2MB.</small>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold">Assign Driver <small class="text-muted">(Optional)</small></label>
 <select name="assigned_driver" class="form-select">
     <option value="">— No Driver —</option>
-    {% for d in drivers %}
-        <option value="{{ d.id }}" {% if v.assigned_driver and v.assigned_driver.id == d.id %}selected{% endif %}>
+    {% for d in drivers_unassigned %}
+        <option value="{{ d.id }}">
             {{ d.name }} ({{ d.license_no }})
         </option>
     {% endfor %}
