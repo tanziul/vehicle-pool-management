@@ -35,15 +35,16 @@
         <!-- SAME TABLE AS ADMIN (PRIORITY HIDDEN) -->
         {% if bookings %}
  <div class="table-responsive">
-            <table class="table data-table align-middle">
+            <table class="table data-table align-middle equal-width-columns">
                 <thead>
                     <tr>
-                        <th>Vehicle</th>
-                        <th>Destination</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                        <th class="vehicle-column">Vehicle</th>
+                        <th class="destination-column">Destination</th>
+                        <th class="purpose-column">Purpose</th>
+                        <th class="time-column">Start Time</th>
+                        <th class="time-column">End Time</th>
+                        <th class="status-column">Status</th>
+                        <th class="action-column">Action</th>
                         <!-- Priority hidden for employees -->
                         <th class="d-none">Priority</th>
                     </tr>
@@ -52,10 +53,20 @@
                     {% for b in bookings %}
                     <tr>
                         <td>
-                            <strong>{{ b.vehicle.model }}</strong><br>
-                            <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
+                            <div class="d-flex align-items-center">
+                                {% if b.vehicle.photo %}
+                                    <img src="{{ b.vehicle.photo.url }}" alt="{{ b.vehicle.model }}" class="table-vehicle-img me-2">
+                                {% else %}
+                                    <i class="bi bi-truck table-vehicle-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ b.vehicle.model }}</strong><br>
+                                    <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
+                                </div>
+                            </div>
                         </td>
                         <td>{{ b.destination }}</td>
+                        <td>{{ b.purpose }}</td>
                         <td>{{ b.start_time|date:"M d, Y H:i" }}</td>
                         <td>{{ b.end_time|date:"M d, Y H:i"|default:"—" }}</td>
                         <td>

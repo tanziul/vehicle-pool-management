@@ -434,6 +434,19 @@ html, body {
     border: 2px solid #e5e7eb;
 }
 
+/* Table Vehicle Images */
+.table-vehicle-img {
+    width: 60px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+
+
 /* Modal Profile Images */
 .modal-profile-img {
     width: 80px;
@@ -1412,7 +1425,6 @@ html, body {
 .table.data-table tbody tr:hover {
     background-color: #e2e8f0 !important;
 }
-
 /* ============================================= */
 /*         SUPER COMPACT VEHICLE CARDS (USER DASHBOARD) */
 /* ============================================= */
@@ -1467,9 +1479,7 @@ html, body {
 
 /* Model Title */
 .vehicle-model-title {
-
     font-size: 1.1rem;
-    
     font-weight: 700;
     color: #1e293b;
     text-align: center;
@@ -1496,7 +1506,6 @@ html, body {
     color: #64748b;
     font-size: 0.9rem;
 }
-
 .info-label-small {
     font-weight: 600;
     color: #475569;
@@ -1507,7 +1516,6 @@ html, body {
     color: #1e293b;
     font-weight: 500;
 }
-
 /* Status Badge */
 .status-badge-small {
     align-self: center;
@@ -1547,16 +1555,44 @@ html, body {
     margin-right: 0.4rem;
 }
 
-/* Responsive */
+.row.g-4 {
+    --bs-gutter-x: 1.5rem; 
+}
+
+.row.g-3 {
+    --bs-gutter-x: 2rem; 
+    --bs-gutter-y: 2rem;
+}
+
+.justify-content-start {
+    justify-content: center !important; /
+}
+.content-card {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+
+.col-5-per-row {
+    flex: 0 0 19%; 
+    max-width: 19%;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+}
+
+/* Responsive — Adjust gap */
 @media (max-width: 1200px) {
-    .vehicle-card-small { font-size: 0.9rem; }
+    .row.g-3 {
+        --bs-gutter-x: 1.5rem;
+    }
+    .col-5-per-row {
+        flex: 0 0 23%;
+        max-width: 23%;
+    }
 }
 
 @media (max-width: 992px) {
-    .vehicle-image-container-small { height: 100px; }
-    .vehicle-placeholder-small { font-size: 2.5rem; }
-}
-
-@media (max-width: 768px) {
-    .vehicle-image-container-small { height: 90px; }
+    .row.g-3 {
+        --bs-gutter-x: 1rem;
+    }
 }

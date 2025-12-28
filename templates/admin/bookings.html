@@ -65,8 +65,17 @@
                     {% for b in bookings %}
                     <tr>
                         <td>
-                            <strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong><br>
-                            <small class="text-muted">{{ b.employee.get_role_display }}</small>
+                            <div class="d-flex align-items-center">
+                                {% if b.employee.profile_picture %}
+                                    <img src="{{ b.employee.profile_picture.url }}" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2">
+                                {% else %}
+                                    <i class="bi bi-person-circle table-profile-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong><br>
+                                    <small class="text-muted">{{ b.employee.get_role_display }}</small>
+                                </div>
+                            </div>
                         </td>
                         <td>
                             <strong>{{ b.vehicle.model }}</strong><br>

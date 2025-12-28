@@ -109,7 +109,18 @@
                     <tbody>
                         {% for b in pending_bookings %}
                         <tr>
-                            <td><strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if b.employee.profile_picture %}
+                                        <img src="{{ b.employee.profile_picture.url }}" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2">
+                                    {% else %}
+                                        <i class="bi bi-person-circle table-profile-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong>
+                                    </div>
+                                </div>
+                            </td>
                             <td><span class="badge bg-primary">{{ b.vehicle.vehicle_number }}</span></td>
                             <td>{{ b.destination|default:"—" }}</td>
                             <td><small title="{{ b.purpose }}">{{ b.purpose|truncatechars:30|default:"—" }}</small></td>

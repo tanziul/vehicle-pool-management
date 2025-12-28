@@ -70,12 +70,18 @@
                 <tbody>
                     {% for v in vehicles %}
                     <tr>
-                        <td class="fw-bold text-dark">
-                            <img src="{{ v.get_photo_url }}"
-                                 alt="{{ v.model }}"
-                                 class="rounded-circle me-2"
-                                 style="width: 45px; height: 45px; object-fit: cover; border: 2px solid #e5e7eb;">
-                            {{ v.model }}
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if v.photo %}
+                                    <img src="{{ v.photo.url }}" alt="{{ v.model }}" class="table-vehicle-img me-2">
+                                {% else %}
+                                    <i class="bi bi-truck table-vehicle-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ v.model }}</strong><br>
+                                    
+                                </div>
+                            </div>
                         </td>
                         <td><strong>{{ v.vehicle_number }}</strong></td>
                         <td><span class="badge bg-light text-dark">{{ v.capacity }} seats</span></td>

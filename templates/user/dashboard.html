@@ -24,10 +24,10 @@
             </h4>
         </div>
 
-        <!-- Compact Grid — More cards per row -->
-        <div class="row g-3 justify-content-start">
+        <!-- Grid — Now exactly 5 cards per row on large screens -->
+        <div class="row g-3 justify-content-center">
             {% for v in vehicles %}
-            <div class="col-6 col-sm-4 col-md-3 col-lg-2 col-xl-2">
+            <div class="col-5-per-row">
                 <div class="vehicle-card-small">
                     <!-- Image -->
                     <div class="vehicle-image-container-small">

@@ -163,7 +163,7 @@
                                 <td>{{ booking.purpose|truncatechars:40 }}</td>
                                 <td>
                                     <span class="status-badge
-                                        {% if booking.status == 'Approved' %}status-available
+                                        {% if booking.status   == 'Approved' %}status-available
                                         {% elif booking.status == 'Pending' %}status-reserved
                                         {% elif booking.status == 'Rejected' %}bg-danger text-white
                                         {% elif booking.status == 'Completed' %}bg-success text-white
@@ -188,6 +188,4 @@
         </div>
     </div>
 </div>
-
-
 {% endblock %}
