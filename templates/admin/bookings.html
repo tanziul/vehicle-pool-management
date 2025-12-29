@@ -67,9 +67,10 @@
                         <td>
                             <div class="d-flex align-items-center">
                                 {% if b.employee.profile_picture %}
-                                    <img src="{{ b.employee.profile_picture.url }}" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2">
+                                    <img src="{{ b.employee.profile_picture.url }}" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2"
+                                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ b.employee.get_full_name|default:b.employee.username|urlencode }}&background=3b82f6&color=fff&size=200'">
                                 {% else %}
-                                    <i class="bi bi-person-circle table-profile-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                    <img src="https://ui-avatars.com/api/?name={{ b.employee.get_full_name|default:b.employee.username|urlencode }}&background=3b82f6&color=fff&size=200" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2">
                                 {% endif %}
                                 <div>
                                     <strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong><br>
@@ -78,8 +79,17 @@
                             </div>
                         </td>
                         <td>
-                            <strong>{{ b.vehicle.model }}</strong><br>
-                            <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
+                            <div class="d-flex align-items-center">
+                                {% if b.vehicle.photo %}
+                                    <img src="{{ b.vehicle.photo.url }}" alt="{{ b.vehicle.model }}" class="table-vehicle-img me-2">
+                                {% else %}
+                                    <i class="bi bi-truck table-vehicle-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ b.vehicle.model }}</strong><br>
+                                    <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
+                                </div>
+                            </div>
                         </td>
                         <td>{{ b.destination|default:"—" }}</td>
                         <td><small title="{{ b.purpose }}">{{ b.purpose|truncatechars:30|default:"—" }}</small></td>

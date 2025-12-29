@@ -998,6 +998,8 @@ html, body {
     padding: 1rem 2rem;
     color: white;
     position: relative;
+    margin-left: -1rem;
+    margin-right: -1rem;
 }
 
 .profile-header-section::before {

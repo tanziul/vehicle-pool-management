@@ -112,19 +112,32 @@
                             <td>
                                 <div class="d-flex align-items-center">
                                     {% if b.employee.profile_picture %}
-                                        <img src="{{ b.employee.profile_picture.url }}" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2">
+                                        <img src="{{ b.employee.profile_picture.url }}" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2"
+                                             onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ b.employee.get_full_name|default:b.employee.username|urlencode }}&background=3b82f6&color=fff&size=200'">
                                     {% else %}
-                                        <i class="bi bi-person-circle table-profile-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                        <img src="https://ui-avatars.com/api/?name={{ b.employee.get_full_name|default:b.employee.username|urlencode }}&background=3b82f6&color=fff&size=200" alt="{{ b.employee.get_full_name }}" class="table-profile-img me-2">
                                     {% endif %}
                                     <div>
                                         <strong>{{ b.employee.get_full_name|default:b.employee.username }}</strong>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="badge bg-primary">{{ b.vehicle.vehicle_number }}</span></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if b.vehicle.photo %}
+                                        <img src="{{ b.vehicle.photo.url }}" alt="{{ b.vehicle.model }}" class="table-vehicle-img me-2">
+                                    {% else %}
+                                        <i class="bi bi-truck table-vehicle-img me-2" style="font-size: 2rem; color: #cbd5e1;"></i>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ b.vehicle.model }}</strong><br>
+                                        <small class="text-muted">{{ b.vehicle.vehicle_number }}</small>
+                                    </div>
+                                </div>
+                            </td>
                             <td>{{ b.destination|default:"—" }}</td>
                             <td><small title="{{ b.purpose }}">{{ b.purpose|truncatechars:30|default:"—" }}</small></td>
-                            <td><small>{{ b.start_time|date:"M j, H:i" }} → {{ b.end_time|date:"H:i"|default:"—" }}</small></td>
+                            <td><small>{{ b.start_time|date:"M j, Y g:i A" }} → {{ b.end_time|date:"M j, Y g:i A"|default:"—" }}</small></td>
                             <td>
                                 <span class="badge {% if b.priority == 5 %}bg-danger{% elif b.priority == 4 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                                     {{ b.get_priority_display }}
