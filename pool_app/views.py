@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
@@ -18,7 +18,7 @@ def profile(request):
             user.profile_picture = request.FILES['profile_picture']
             user.save()
             messages.success(request, "Profile picture updated successfully!")
-        return redirect('profile')
+            return redirect('profile')
 
     context = {
         'total_bookings_made': user.bookings_made.count(),
@@ -31,7 +31,7 @@ def profile(request):
         context['bookings_approved'] = user.approved_bookings.count()
         context['total_vehicles_managed'] = Vehicle.objects.count()
 
-    context.update(get_notifications(request)) 
+    context.update(get_notifications(request))
     return render(request, 'profile.html', context)
 
 # SEARCH FUNCTION 

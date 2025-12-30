@@ -14,6 +14,7 @@ class User(AbstractUser):
         ('Admin', 'Admin'),
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Employee')
+    email = models.EmailField(unique=True, blank=True)  # Override to make email unique
     profile_picture = models.ImageField(
         upload_to='profile_pictures/',
         null=True,

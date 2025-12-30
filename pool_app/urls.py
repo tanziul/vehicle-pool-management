@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -22,10 +23,18 @@ urlpatterns = [
     path('admin/drivers/', views.admin_drivers, name='admin_drivers'),
     path('admin/users/', views.admin_users, name='admin_users'),
 
-
     path('admin/bookings/approve/<int:pk>/', views.approve_booking, name='approve_booking'),
     path('admin/bookings/reject/<int:pk>/', views.reject_booking, name='reject_booking'),
     path('reports/', views.reports, name='reports'),
-   
-   
+
+    # === FORGOT PASSWORD — EMAIL LINK ===
+    path('password-reset/', auth_views.PasswordResetView.as_view(
+        template_name='registration/password_reset_form.html',
+        email_template_name='registration/password_reset_email.html',
+        subject_template_name='registration/password_reset_subject.txt'
+    ), name='password_reset'),
+
+    path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 ]
