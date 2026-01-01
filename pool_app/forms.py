@@ -15,7 +15,7 @@ class CustomPasswordResetForm(PasswordResetForm):
         email = self.cleaned_data.get('email')
         User = get_user_model()
 
-        # Try to find user by username first, then by email
+       
         user = User.objects.filter(username=email).first()
         if not user:
             user = User.objects.filter(email=email).first()
@@ -29,7 +29,6 @@ class CustomPasswordResetForm(PasswordResetForm):
         if not user.email:
             raise forms.ValidationError("This user does not have an email address set. Please contact an administrator to reset your password.")
 
-        # Return the user's actual email address for the password reset process
         return user.email
 
 

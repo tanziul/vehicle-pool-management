@@ -210,11 +210,11 @@ def admin_dashboard(request):
     now = localtime(timezone.now())
     today = now.date()
 
-    # Calculate UTC date ranges for today
+
     today_start_utc = datetime.combine(today, time.min).replace(tzinfo=utc)
     today_end_utc = datetime.combine(today, time.max).replace(tzinfo=utc) + timedelta(microseconds=1)
 
-    # Calculate UTC date ranges for this month
+ 
     first_day = today.replace(day=1)
     last_day = today.replace(day=monthrange(today.year, today.month)[1])
     month_start_utc = datetime.combine(first_day, time.min).replace(tzinfo=utc)
@@ -355,46 +355,43 @@ def edit_vehicle(request, pk):
                 vehicle.capacity = int(request.POST['capacity'])
                 new_status = request.POST['status']
 
-                # Handle driver assignment
+           
                 driver_id = request.POST.get('assigned_driver', '').strip()
 
-                # If no driver selected
+               
                 if not driver_id:
                     if current_driver:
                         current_driver.assigned_vehicle = None
                         current_driver.save(update_fields=['assigned_vehicle'])
 
-                # If a driver is selected
+         
                 else:
                     new_driver = get_object_or_404(Driver, id=int(driver_id))
 
-                    # Check if driver is already assigned to another vehicle
+                    
                     if new_driver.assigned_vehicle and new_driver.assigned_vehicle != vehicle:
                         messages.error(request, f"Driver {new_driver.name} is already assigned to another vehicle!")
                         return redirect('admin_vehicles')
 
-                    # Unassign current driver if different from new driver
+                  
                     if current_driver and current_driver != new_driver:
                         current_driver.assigned_vehicle = None
                         current_driver.save(update_fields=['assigned_vehicle'])
 
-                    # Assign new driver to this vehicle
                     new_driver.assigned_vehicle = vehicle
                     new_driver.save(update_fields=['assigned_vehicle'])
 
-                # Refresh vehicle to get updated assigned_driver
                 vehicle.refresh_from_db()
 
-                # Handle status changes that affect driver assignment
+            
                 if new_status in ['Maintenance', 'Out of Service']:
-                    # For maintenance/out of service, unassign driver and store as last_assigned_driver
                     try:
                         assigned_driver = vehicle.assigned_driver
                         vehicle.last_assigned_driver = assigned_driver
                         assigned_driver.assigned_vehicle = None
                         assigned_driver.save(update_fields=['assigned_vehicle'])
                     except:
-                        # No driver assigned, just set last_assigned_driver to None
+                       
                         vehicle.last_assigned_driver = None
 
                 # Handle photo upload
@@ -433,7 +430,7 @@ def admin_drivers(request):
                 license_no=request.POST['license_no'].strip(),
                 status=request.POST.get('status', 'Active')
             )
-            # Handle photo upload
+            
             if 'photo' in request.FILES:
                 driver.photo = request.FILES['photo']
                 driver.save()
