@@ -118,9 +118,6 @@ def login_view(request):
 @login_required
 def logout_view(request):
     logout(request)
-
-    list(messages.get_messages(request))  
-    messages.success(request, 'Logged out successfully.')
     return redirect('home')
 @login_required
 def dashboard(request):

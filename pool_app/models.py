@@ -7,7 +7,7 @@ from urllib.parse import quote
 
 
 class User(AbstractUser):
-    ROLE_CHOICES = [
+    ROLE_CHOICES = [                
         ('Employee', 'Employee'),
         ('Manager', 'Manager'),
         ('HR', 'HR'),
@@ -15,11 +15,7 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='Employee')
     email = models.EmailField(unique=True, blank=True)  
-
-    profile_picture = models.ImageField(
-        upload_to='profile_pictures/',
-        null=True,
-        blank=True,
+    profile_picture = models.ImageField(upload_to='profile_pictures/',null=True,blank=True,
     )
     
     def get_profile_picture_url(self):
@@ -44,11 +40,7 @@ class Vehicle(models.Model):
     vehicle_number = models.CharField(max_length=20, unique=True)
     capacity = models.PositiveIntegerField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Available')  # Fixed typo from 'vailable'
-    photo = models.ImageField(
-        upload_to='vehicle_photos/',
-        null=True,
-        blank=True,
-    )
+    photo = models.ImageField( upload_to='vehicle_photos/',null=True,blank=True,)
 
     last_assigned_driver = models.ForeignKey(
         'Driver',
@@ -130,6 +122,7 @@ class Booking(models.Model):
     def __str__(self):
         return f"{self.employee} → {self.vehicle}"
 
+
     class Meta:
         ordering = ['-created_at']
 
@@ -144,25 +137,25 @@ class Booking(models.Model):
                 old = Booking.objects.get(pk=self.pk)
                 becoming_approved = (old.status != 'Approved' and self.status == 'Approved')
                 becoming_rejected = (old.status != 'Rejected' and self.status == 'Rejected')
-                becoming_pending = (old.status != 'Pending' and self.status == 'Pending')
+                becoming_pending  = (old.status != 'Pending' and self.status == 'Pending')
             except Booking.DoesNotExist:
                 becoming_approved = (self.status == 'Approved')
                 becoming_rejected = (self.status == 'Rejected')
-                becoming_pending = (self.status == 'Pending')
+                becoming_pending  = (self.status == 'Pending')
         else:
             becoming_approved = (self.status == 'Approved')
-            becoming_rejected = (self.status == 'Rejected')
-            becoming_pending = (self.status == 'Pending')
+            becoming_rejected = (self.status == 'Rejected')          
+            becoming_pending  = (self.status == 'Pending')
 
         if becoming_approved and self.vehicle:
             if self.vehicle.status != 'Booked':
                 self.vehicle.status = 'Booked'
                 self.vehicle.save(update_fields=['status'])
-
         super().save(*args, **kwargs)
 
         # Notifications after saving
         if becoming_pending:
+        
             from django.contrib.auth import get_user_model
             User = get_user_model()
             admins = User.objects.filter(is_staff=True)
@@ -201,7 +194,7 @@ class TripReport(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.completed_at:
-            self.completed_at = self.booking.end_time  # Use actual trip end time
+            self.completed_at = self.booking.end_time 
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -238,6 +231,7 @@ def _release_vehicle_after_delay(booking_id):
                 booking.vehicle.save(update_fields=['status'])
                 booking.status = 'Completed'
                 booking.save(update_fields=['status'])
+                
         except Booking.DoesNotExist:
             pass
 
